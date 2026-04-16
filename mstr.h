@@ -76,4 +76,23 @@ Mstr mstr_chop_by (Mstr* string, char delim) {
 	return res;
 }
 
+Mstr mstr_chop_by_fun (Mstr* string, int (*fun)(int)) {
+	size_t i = 0;
+	while (i < string->length && !fun(string->raw[i])) i++;
+
+	if (i < string->length) {
+		Mstr res = {
+			.raw = string->raw,
+			.length = i,
+		};
+
+		mstr_chop_l(string, i + 1);
+		return res;
+	}
+
+	Mstr res = *string;
+	mstr_chop_r(string, string->length);
+	return res;
+}
+
 #endif
