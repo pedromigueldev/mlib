@@ -9,6 +9,46 @@
 #include <string.h>
 #include "./mstr.h"
 
+int mfile_mkdir_tryfail(char* where, char* project_name, char** path) {
+	if (project_name == NULL) {
+		*path = strdup("A project name was not provided!\n");
+        return 1;
+    }
+    
+    char newProjectFile[PATH_MAX];
+    
+    if (where != NULL) {
+    	char *rpath = realpath(where, NULL);
+        if (!rpath) {
+            *path = strerror(errno);
+            return 1;
+        }
+		
+        if (snprintf(newProjectFile, PATH_MAX, "%s/%s", rpath, project_name) >= PATH_MAX) {
+             *path = strdup("Path was too long\n");
+             return 1;
+         }
+    } else {
+   		char cwd[PATH_MAX];
+        if (getcwd(cwd, sizeof(cwd)) == NULL) {
+            *path = strerror(errno);
+            return 1;
+        }
+    
+        if (snprintf(newProjectFile, PATH_MAX, "%s/%s", cwd, project_name) >= PATH_MAX) {
+            *path = strdup("Path was too long\n");
+            return 1;
+        }
+    }
+
+    if (mkdir(newProjectFile, 0755) == -1) {
+        *path = strerror(errno);
+        return 1;
+    }
+
+    *path = strdup(newProjectFile);
+    return 0;
+}
 
 int create_directory_tryfail(int argc, char** argv, char** path) {
 	if (argc < 2) {
