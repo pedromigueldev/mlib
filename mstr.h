@@ -1,42 +1,54 @@
 #ifndef MSTRH
 #define MSTRH
+#include "mfile.h"
 
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
+char* strndup(const char* s, size_t len) {
+    char* copy = malloc(len + 1);
+    if (!copy) return NULL;
+    memcpy(copy, s, len);
+    copy[len] = '\0';
+    return copy;
+}
 
 typedef struct {
-	char* raw;
 	size_t length;
-} Mstr_view;
-
-typedef struct {
-	char* raw;
-	size_t length;
+	char raw[];
 } Mstr;
 
-Mstr mstr_from (char* string) {
-	char* buf = strdup(string);
-	if (!buf) {
-		printf("ERROR: Could not malloc memory for string\n");
-		exit(1);
+int mstr_from_tryfail (Mstr** out, char* string) {
+	size_t len = strlen(string);
+	Mstr* mstrstring = malloc(sizeof(Mstr) + len);
+	if (!mstrstring) {
+		*(void**)(out) = strdup("mstr_from_fail alloc: buy more ram\n");
+		return 1;
 	}
-
-	return (Mstr) {
-		.raw = buf,
-		.length = strlen(buf),
+	*mstrstring = (Mstr) {
+		.length = len,
 	};
+	
+    memcpy(mstrstring->raw, string, len);
+	*out = mstrstring;
+	return 0;
 }
 
-void mstr_chop_r (Mstr* string, size_t n) {
-	if (n > string->length) n = string->length;
-	string->length -= n;
+void mstr_chop_r(Mstr* string, size_t n) {
+    if (n > string->length)
+        n = string->length;
+
+    string->length -= n;
 }
 
-void mstr_chop_l (Mstr* string, size_t n) {
-	if (n > string-> length) n = string -> length;
-	string->raw += n;
-	string->length -= n;
+void mstr_chop_l(Mstr* string, size_t n) {
+    if (n > string->length)
+        n = string->length;
+
+    memmove(
+        string->raw,
+        string->raw + n,
+        string->length - n
+    );
+
+    string->length -= n;
 }
 
 void mstr_trim_left (Mstr* string) {
@@ -56,42 +68,54 @@ void mstr_trim (Mstr* string) {
 	mstr_trim_right(string);
 }
 
-Mstr mstr_chop_by (Mstr* string, char delim) {
+Mstr* mstr_chop_by(Mstr* string, char delim) {
+	if (string->length <= 0) return NULL;
 	size_t i = 0;
-	while (i < string->length && string->raw[i] != delim) i++;
 
-	if (i < string-> length) {
-		Mstr res = {
-			.raw = string->raw,
-			.length = i,
-		};
+	while (i < string->length && string->raw[i] != delim)
+		i++;
 
-		mstr_chop_l(string, i + 1);
-		return res;
+
+	Mstr* res = NULL;
+	char* copy = strndup(string->raw, string->length);
+	catch(mstr_from, &res, copy) {
+		return NULL;
 	}
 
-	Mstr res = *string;
-	mstr_chop_r(string, string->length);
+	if (i < string->length)
+		mstr_chop_r(res, res->length - i);
+	
+	if (i < string->length)
+		mstr_chop_l(string, i + 1);
+	else
+		mstr_chop_r(string, string->length);
 
+	free(copy);
 	return res;
 }
 
-Mstr mstr_chop_by_fun (Mstr* string, int (*fun)(int)) {
+Mstr* mstr_chop_by_fun(Mstr* string, int (*fun)(int)) {
+	if (string->length <= 0) return NULL;
 	size_t i = 0;
-	while (i < string->length && !fun(string->raw[i])) i++;
 
-	if (i < string->length) {
-		Mstr res = {
-			.raw = string->raw,
-			.length = i,
-		};
+	while (i < string->length && !fun((unsigned char)string->raw[i]))
+		i++;
 
-		mstr_chop_l(string, i + 1);
-		return res;
+	Mstr* res = NULL;
+	char* copy = strndup(string->raw, string->length);
+	catch(mstr_from, &res, copy) {
+		return NULL;
 	}
 
-	Mstr res = *string;
-	mstr_chop_r(string, string->length);
+	if (i < string->length)
+		mstr_chop_r(res, res->length - i);
+	
+	if (i < string->length)
+		mstr_chop_l(string, i + 1);
+	else
+		mstr_chop_r(string, string->length);
+
+	free(copy);
 	return res;
 }
 
