@@ -1,15 +1,14 @@
 #ifndef MFILEH
 #define MFILEH
-
 #include "mlib.h"
 #include "mstr.h"
 
-int mfile_mkdir_path_tryfail(char** error, char* path) {
-    if (mkdir(path, 0755) == -1) {
-        *error = strerror(errno);
+int mfile_mkdir_path_tryfail(char** path, int permission) {
+    if (mkdir(*path, permission) == -1) {
+        wrap_fail(path) = strdup(strerror(errno));
         return 1;
     }
-    
+
     return 0;
 }
 
