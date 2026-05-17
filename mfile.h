@@ -33,7 +33,8 @@ int mfile_read_tryfail (Mstr** buffer_out, const char* filename) {
 		fprintf(stderr, "It was not possible to create file buffer: %s\n", unwrap_fail(*buffer_out));
 		return 1;
 	};
-	
+
+	free(buffer);
 	return 0;
 }
 

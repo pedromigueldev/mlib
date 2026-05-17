@@ -2,6 +2,8 @@
 #define MSTRH
 #include "mfile.h"
 
+#define MFMT(x) _3_$("%.*s", (x)->length, (x)->raw)
+
 char* strndup(const char* s, size_t len) {
     char* copy = malloc(len + 1);
     if (!copy) return NULL;
