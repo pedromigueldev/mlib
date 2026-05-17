@@ -4,29 +4,35 @@
 #include "mstr.h"
 #include "marr.h"
 
-void many(Marr_param_ref(ptr, char)) {
-	static bool second_layer = false;
-
+void many(char** ptr) {
 	for(int i = 0; i < 10; i++) {
-		Marr_put(ptr, 'a' + i);
+		MarrPut(*ptr, 'a' + i);
 	}
-
-	if (second_layer) return;
-	second_layer = true;
-	
-	many(Marr_spreadref(ptr));
 }
 
-bool string_append(Marr_param_ref(ptr, char), const char* string) {
+bool string_append(char** ptr, const char* string) {
 	do {
 		if (string != NULL)
-			Marr_put(ptr, *string);
+			MarrPut(*ptr, *string);
 	} while (*string++);
 	return 0;
 }
+   
+
 
 int main(void) {
-	Marr_dft_def(lines, char*);
+// 	MGPAllocMem* allocvector __free(mgpafree) = NULL;
+// 	char* string = MGPA(allocvector, sizeof(char) * 10);
+// 
+// 	for(int i = 0; i < 10; i++) {
+// 		string[i] = 'a' + i;
+// 		printf("%c", string[i]);
+// 	}
+// 
+// 	puts("\n");
+// 	return 0;
+	
+	char** lines = NULL;
 	Mstr* file = NULL;
 	
 	catch(mfile_read, &file, "main.c") {
@@ -43,17 +49,16 @@ int main(void) {
 
 		if (token == NULL) break;
 
-		Marr_put(&lines, MPRINT_FMT_OUT("LINE: "MFMT(token)));
-
+		MarrPut(lines, MPRINT_FMT_OUT("LINE: "MFMT(token)));
 	    free(token);
 	}
 
-	Marr_foreach(item, &lines) {
+	MarrForeach(item, lines) {
 		printf("%s\n", item);
 		free(item);
 	};
 	
-	free(ARR(lines));
+	MarrForeach(line, lines) free(line);
 	free(file);
 	return 0;
 }
