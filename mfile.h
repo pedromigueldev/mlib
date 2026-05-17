@@ -38,4 +38,32 @@ int mfile_read_tryfail (Mstr** buffer_out, const char* filename) {
 	return 0;
 }
 
+int mfile_create_tryfail(char** out, char* path, char* contents) {
+	if (!out || !path || !contents) {
+		wrap_fail(out) = strdup("Parameters for file creation may be null");
+        return 1;
+    }
+
+	FILE* file = fopen(path, "w");
+	
+    if (file == NULL) {
+        wrap_fail(out) = strdup(strerror(errno));
+        return 1;
+    }
+    
+    if (fputs(contents, file) == EOF) {
+        wrap_fail(out) = strdup(strerror(errno));
+        fclose(file);
+        return 1;
+    }
+
+    if (fclose(file) == EOF) {
+        wrap_fail(out) = strdup(strerror(errno));
+        return 1;
+    }
+    
+    *out = contents;
+	return 0;
+}
+
 #endif
