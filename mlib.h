@@ -51,46 +51,49 @@ bool starts_with(const char *str, const char *prefix) {
 	return strncmp(str, prefix, len_prefix) == 0;
 }
 
-
-char* MPRINT_FMT_LN(const char *first, ...)
-{
-	va_list args;
-	va_start(args, first);
-    
+char* MPRINT_FMT_LN_V(const char *first, va_list args) {
     char out_buffer[5000] = {0};
     size_t offset = 0;
-
-	const char* fmt = first;    
-	while (1) {;
-		if (fmt == NULL) break;
-		if (starts_with(fmt, "%.*")) {
-		    int len = va_arg(args, int);       // first argument for %.*
-            char* str = va_arg(args, char*);   // second argument for %.*
+    
+    va_list args_copy;
+    va_copy(args_copy, args);
+    
+    const char* fmt = first;    
+    while (fmt != NULL) {
+        if (starts_with(fmt, "%.*")) {
+            int len = va_arg(args_copy, int);
+            char* str = va_arg(args_copy, char*);
             offset += snprintf(out_buffer + offset, sizeof(out_buffer) - offset, fmt, len, str);
-		}
-		else if (starts_with(fmt, "%")) {
-			void* variable = va_arg(args, void*);
-    		offset += snprintf(out_buffer + offset, sizeof(out_buffer) - offset, fmt, variable);
-		} else {
-		     offset += snprintf(out_buffer + offset, sizeof(out_buffer) - offset, "%s", fmt);
-		}
-		
-		fmt = va_arg(args, const char*);
-	}
-	
-	va_end(args);
-	return strdup(out_buffer);
+        }
+        else if (starts_with(fmt, "%")) {
+            void* variable = va_arg(args_copy, void*);
+            offset += snprintf(out_buffer + offset, sizeof(out_buffer) - offset, fmt, variable);
+        } else {
+            offset += snprintf(out_buffer + offset, sizeof(out_buffer) - offset, "%s", fmt);
+        }
+        
+        fmt = va_arg(args_copy, const char*);
+    }
+    
+    va_end(args_copy);
+    return strdup(out_buffer);
+}
+
+char* MPRINT_FMT_LN(const char *first, ...) {
+    va_list args;
+    va_start(args, first);
+    char* result = MPRINT_FMT_LN_V(first, args);
+    va_end(args);
+    return result;
 }
 
 void MPRINT_STDOUT(const char *first, ...) {
-	va_list args;
-	va_start(args, first);
-
-	char* print_b = MPRINT_FMT_LN(first, args);
-	puts(print_b);
-
-	va_end(args);
-	free(print_b);
+    va_list args;
+    va_start(args, first);
+    char* print_b = MPRINT_FMT_LN_V(first, args);
+    printf("%s\n", print_b);
+    va_end(args);
+    free(print_b);
 }
 
 #define _ARG_G(x) _Generic((x), \
