@@ -5,9 +5,16 @@
 #include "marr.h"
 
 void many(Marr_param_ref(ptr, char)) {
+	static bool second_layer = false;
+
 	for(int i = 0; i < 10; i++) {
 		Marr_put(ptr, 'a' + i);
 	}
+
+	if (second_layer) return;
+	second_layer = true;
+	
+	many(Marr_spreadref(ptr));
 }
 
 bool string_append(Marr_param_ref(ptr, char), const char* string) {
@@ -20,8 +27,6 @@ bool string_append(Marr_param_ref(ptr, char), const char* string) {
 
 int main(void) {
 	Marr_dft_def(lines, char*);
-	Marr_new_def(numbers, char, 10);
-	many(Marr_spreadref(numbers));
 	Mstr* file = NULL;
 	
 	catch(mfile_read, &file, "main.c") {
@@ -29,9 +34,17 @@ int main(void) {
 		return 1;
 	};
 
-	Mstr* token = NULL;
-	while ((token = mstr_chop_by(file, '\n')) != NULL){
+	for(;;) {
+		Mstr* token = NULL;
+		catch(mstr_chop_by, &token, file, '\n') {
+			fprintf(stderr, "%s\n", unwrap_fail(token));
+			return 1;
+		}
+
+		if (token == NULL) break;
+
 		Marr_put(&lines, MPRINT_FMT_OUT("LINE: "MFMT(token)));
+
 	    free(token);
 	}
 
@@ -41,7 +54,6 @@ int main(void) {
 	};
 	
 	free(ARR(lines));
-	free(ARR(numbers));
 	free(file);
 	return 0;
 }

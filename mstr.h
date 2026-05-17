@@ -21,7 +21,7 @@ int mstr_from_tryfail (Mstr** out, char* string) {
 	size_t len = strlen(string);
 	Mstr* mstrstring = malloc(sizeof(Mstr) + len);
 	if (!mstrstring) {
-		*(void**)(out) = strdup("mstr_from_fail alloc: buy more ram\n");
+		wrap_fail(out) = strdup("mstr_from_fail alloc: buy more ram\n");
 		return 1;
 	}
 	*mstrstring = (Mstr) {
@@ -68,6 +68,39 @@ void mstr_trim_right (Mstr* string) {
 void mstr_trim (Mstr* string) {
 	mstr_trim_left(string);
 	mstr_trim_right(string);
+}
+
+int mstr_chop_by_tryfail(Mstr** out, Mstr* string, char delim) {
+	if (string->length <= 0) {
+		*out = NULL;
+		return 0;	
+	}
+	
+	size_t i = 0;
+
+	while (i < string->length && string->raw[i] != delim)
+		i++;
+		
+	Mstr* res = NULL;
+	char* copy = strndup(string->raw, string->length);
+
+	catch(mstr_from, &res, copy) {
+		wrap_fail(out) = (char*)res;
+		return 1;
+	}
+
+	if (i < string->length)
+		mstr_chop_r(res, res->length - i);
+	
+	if (i < string->length)
+		mstr_chop_l(string, i + 1);
+	else
+		mstr_chop_r(string, string->length);
+
+	free(copy);
+	
+	*out = res;
+	return 0;
 }
 
 Mstr* mstr_chop_by(Mstr* string, char delim) {

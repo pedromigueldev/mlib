@@ -38,7 +38,7 @@
 		Marr_foreach(item, ptr) 		\
 			free(&item);		
 
-#define Marr_spreadref(ptr) ARR(&ptr), ARRLEN(&ptr), ARRCAP(&ptr)
+#define Marr_spreadref(ptr) ARR(ptr), ARRLEN(ptr), ARRCAP(ptr)
 #define Marr_param_ref(ptr, t) t* ARR(*ptr), size_t ARRLEN(*ptr), size_t ARRCAP(*ptr)
 
 #endif
