@@ -2,37 +2,10 @@
 #include <stdint.h>
 #include "mfile.h"
 #include "mstr.h"
-#include "marr.h"
-
-void many(char** ptr) {
-	for(int i = 0; i < 10; i++) {
-		MarrPut(*ptr, 'a' + i);
-	}
-}
-
-bool string_append(char** ptr, const char* string) {
-	do {
-		if (string != NULL)
-			MarrPut(*ptr, *string);
-	} while (*string++);
-	return 0;
-}
+#include "mvector.h"
    
-
-
 int main(void) {
-// 	MGPAllocMem* allocvector __free(mgpafree) = NULL;
-// 	char* string = MGPA(allocvector, sizeof(char) * 10);
-// 
-// 	for(int i = 0; i < 10; i++) {
-// 		string[i] = 'a' + i;
-// 		printf("%c", string[i]);
-// 	}
-// 
-// 	puts("\n");
-// 	return 0;
-	
-	char** lines = NULL;
+	MVecPreAlloc(lines, char*);
 	Mstr* file = NULL;
 	
 	catch(mfile_read, &file, "main.c") {
@@ -49,16 +22,16 @@ int main(void) {
 
 		if (token == NULL) break;
 
-		MarrPut(lines, MPRINT_FMT_OUT("LINE: "MFMT(token)));
+		MVecPush(lines, MPRINT_FMT_OUT("LINE: "MFMT(token)));
 	    free(token);
 	}
 
-	MarrForeach(item, lines) {
+	MVecForeach(item, lines) {
 		printf("%s\n", item);
-		free(item);
 	};
 	
-	MarrForeach(line, lines) free(line);
+	MVecForeach(line, lines) free(line);
+	free(MVec(lines));
 	free(file);
 	return 0;
 }
