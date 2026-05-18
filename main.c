@@ -3,9 +3,16 @@
 #include "mfile.h"
 #include "mstr.h"
 #include "mvector.h"
-   
+
+char* string_new(MVecParamDefPtr(*string_pool, char*), const char* str) {
+    return MVecPush(*string_pool, (char*)str);
+}
+
+#define MStringPool(name) MVecAllocDefault(name, char*)
+#define MStringPoolPush(string_pool, string) string_new(MVecParamRefPtr(string_pool), (string))
+
 int main(void) {
-	MVecPreAlloc(lines, char*);
+	MStringPool(string_pool);
 	Mstr* file = NULL;
 	
 	catch(mfile_read, &file, "main.c") {
@@ -22,16 +29,16 @@ int main(void) {
 
 		if (token == NULL) break;
 
-		MVecPush(lines, MPRINT_FMT_OUT("LINE: "MFMT(token)));
+		MStringPoolPush(&string_pool, MPRINT_FMT_OUT("LINE: "MFMT(token)));
 	    free(token);
 	}
 
-	MVecForeach(item, lines) {
+	MVecForeach(item, string_pool) {
 		printf("%s\n", item);
+		free(item);
 	};
 	
-	MVecForeach(line, lines) free(line);
-	free(MVec(lines));
+	free(MVec(string_pool));
 	free(file);
 	return 0;
 }

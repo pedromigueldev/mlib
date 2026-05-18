@@ -1,2 +1,5 @@
+CC=gcc
+FLAGS=-g -Wall -std=c23
+
 all: main.c
-	gcc main.c -o main -g 
+	$(CC) main.c -o main $(FLAGS)
