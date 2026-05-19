@@ -26,6 +26,7 @@
 #define MVecParamDefPtr(ptr, t) t* MVec(ptr), size_t MVecLen(ptr), size_t MVecCap(ptr)
 
 static inline void* MVecGetImpl(MVecParamDefPtr(*vec, uintptr_t), size_t index, size_t sizeofVecItem) {
+	UNUSED(MVecCap(vec));
     if (index >= MVecLen(*vec)) {
         errno = ERANGE;
         fprintf(stderr, "Error accessing index %zu (length: %zu): %s\n",
@@ -60,55 +61,23 @@ static inline void* MVecPushImpl(MVecParamDefPtr(*vec, uintptr_t), uintptr_t dat
     return target;
 }
 
-#ifndef MVecUseInlineFunc
-    #define MVecPush(ptr, value) \
-        ({\
-            do {\
-                if (MVecLen(ptr) >= MVecCap(ptr)) {\
-                    MVecCap(ptr) *= 2;\
-                    MVec(ptr) = MVECREALLOC(ptr, MVecCap(ptr) * sizeof((MVec(ptr))[0]));\
-                }\
-                (MVec(ptr))[(MVecLen(ptr))++] = value;\
-            } while(0);\
-            (MVec(ptr))[(MVecLen(ptr))-1];\
-        })
-        
-    #define MVecGet(ptr, index) \
-        ({\
-            if (index >= MVecLen(ptr)) {\
-                errno = ERANGE; \
-                fprintf(stderr, "Error accessing index %d of array (length: %zu): %s\n", index, MVecLen(ptr), strerror(ERANGE));\
-                exit(69);\
-            }\
-            *(__typeof__(MVec(ptr)))((char*)MVec(ptr) + (index * MVecItemSize(ptr)));\
-        })
-        
-    #define MVecSet(ptr, index, value)\
-        do {\
-            if (index >= MVecLen(ptr)) {\
-                errno = ERANGE; \
-                fprintf(stderr, "Error setting at index %d of array (length: %zu): %s\n", index, MVecLen(ptr), strerror(ERANGE));\
-                exit(420);\
-            }\
-            (MVec(ptr))[index] = value;\
-            if (index >= MVecLen(ptr))\
-                MVecLen(ptr) = index + 1;\
-        } while(0)
 
-    #define MVecPushFn(ptr, data) \
-        *(__typeof__(MVec(ptr))) MVecPushImpl((uintptr_t**)MVecParamRefPtr(&ptr), (uintptr_t)data, MVecItemSize(ptr))
-    #define MVecGetFn(ptr, index) \
-        *(__typeof__(MVec(ptr))) MVecGetImpl((uintptr_t**)MVecParamRefPtr(&ptr), index, MVecItemSize(ptr))
-    #define MVecSetFn(ptr, index, data) \
-        *(__typeof__(MVec(ptr))) MVecSetImpl((uintptr_t**)MVecParamRefPtr(&ptr), index, (uintptr_t)data, MVecItemSize(ptr))    
-#else
+#define MVecPush(ptr, data) \
+    *(__typeof__(MVec(ptr))) MVecPushImpl((uintptr_t**)MVecParamRefPtr(&ptr), (uintptr_t)data, MVecItemSize(ptr))
+#define MVecGet(ptr, index) \
+    *(__typeof__(MVec(ptr))) MVecGetImpl((uintptr_t**)MVecParamRefPtr(&ptr), index, MVecItemSize(ptr))
+#define MVecSet(ptr, index, data) \
+    *(__typeof__(MVec(ptr))) MVecSetImpl((uintptr_t**)MVecParamRefPtr(&ptr), index, (uintptr_t)data, MVecItemSize(ptr))
 
-    #define MVecPush(ptr, data) \
-        *(__typeof__(MVec(ptr))) MVecPushImpl((uintptr_t**)MVecParamRefPtr(&ptr), (uintptr_t)data, MVecItemSize(ptr))
-    #define MVecGet(ptr, index) \
-        *(__typeof__(MVec(ptr))) MVecGetImpl((uintptr_t**)MVecParamRefPtr(&ptr), index, MVecItemSize(ptr))
-    #define MVecSet(ptr, index, data) \
-        *(__typeof__(MVec(ptr))) MVecSetImpl((uintptr_t**)MVecParamRefPtr(&ptr), index, (uintptr_t)data, MVecItemSize(ptr))
+void* MVecPoolAlloc(MVecParamDefPtr(*pool, char), size_t size) {
+    if (size >= MVecCap(*pool)) {
+        MVecCap(*pool) *= 2;
+		MVec(*pool) = MVECREALLOC(*pool, MVecCap(*pool) *  MVecItemSize(*pool));
+    }
+    (MVecLen(*pool)) += size;
+    
+    return &MVecGet(*pool, MVecLen(*pool) - size);
+}
 
-#endif
+
 #endif

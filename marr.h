@@ -7,6 +7,7 @@
 static inline __attribute__((__must_check__)) void *__must_check_ptr(void *p) {
     return p;
 }
+
 #define no_free_ptr(p) __must_check_ptr(({ \
     __auto_type __ptr = (p); \
     (p) = NULL; \
@@ -26,7 +27,6 @@ typedef struct {
 	size_t capacity;
 	uintptr_t items[];
 } MarrImpl;
-
 
 #define MarrImplFrom(arr) ((MarrImpl*)((uintptr_t)(arr) - sizeof(MarrImpl)))
 #define MarrVerifyInit(some) \
@@ -60,6 +60,6 @@ typedef struct {
 
 #define MarrForeach(item, ptr)\
 	if (MarrLength(ptr) > 0)																			\
-			for(int __k = 1, index = 0; __k && index < (int) MarrLength(ptr); __k = !__k, index++)   \
-				for(typeof (ptr[0]) item = (ptr)[index]; __k; __k = !__k)
+		for(int __k = 1, index = 0; __k && index < (int) MarrLength(ptr); __k = !__k, index++)   \
+			for(typeof (ptr[0]) item = (ptr)[index]; __k; __k = !__k)
 #endif

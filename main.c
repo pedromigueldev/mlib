@@ -2,17 +2,10 @@
 #include <stdint.h>
 #include "mfile.h"
 #include "mstr.h"
-#include "mvector.h"
 
-char* string_new(MVecParamDefPtr(*string_pool, char*), const char* str) {
-    return MVecPush(*string_pool, (char*)str);
-}
-
-#define MStringPool(name) MVecAllocDefault(name, char*)
-#define MStringPoolPush(string_pool, string) string_new(MVecParamRefPtr(string_pool), (string))
-
-int main(void) {
-	MStringPool(string_pool);
+int main()
+{
+	MVecAlloc(pool, char, 100);
 	Mstr* file = NULL;
 	
 	catch(mfile_read, &file, "main.c") {
