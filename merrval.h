@@ -1,6 +1,6 @@
 #ifndef MERRVAL_H
 #define MERRVAL_H
-
+#include "mlib.h"
 #define CONCAT(a, b) a##b
 #define CONCAT_EXPAND(a, b) CONCAT(a, b)
 #define UNIQUE_NAME(base) CONCAT_EXPAND(base, __LINE__)
@@ -34,7 +34,7 @@
 #define MRetEither(var, varErr, __functionExp) \
     __auto_type UNIQUE_NAME(temp) = __functionExp;\
     __auto_type varErr = UNIQUE_NAME(temp).error;\
-    __auto_type var = UNIQUE_NAME(temp).val;
+    __auto_type var = UNIQUE_NAME(temp).val; UNUSED(var)
     
 #define MRetUnwrapOr(value, PROVIDE_FALLBACK_VALUE) value.error != 0 ? (__typeof(value.val))PROVIDE_FALLBACK_VALUE : value.val
 

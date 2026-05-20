@@ -2,6 +2,22 @@
 #define MSTRH
 #include "mvector.h"
 
+char *quick_strndup(const char *s, size_t n)
+{
+    size_t len = 0;
+    while (len < n && s[len] != '\0')
+        len++;
+
+    char *copy = (char *)malloc(len + 1);
+    if (!copy)
+        return NULL;
+
+    memcpy(copy, s, len);
+    copy[len] = '\0';
+
+    return copy;
+}
+
 typedef struct {
 	size_t length;
 	char raw[];

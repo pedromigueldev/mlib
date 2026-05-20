@@ -12,21 +12,27 @@
 #define MKDIR(path, mode) mkdir(path, mode)
 #endif
 
-MRetErrDefine(const char*, char*, MmkdirResult)
-mfile_mkdir_path(const char* path, int permission) {
+MRetErrDefine(MstrView, char*, MmkdirResult)
+mfile_mkdir_path(MstrView path, int permission) {
     UNUSED(permission); // on windows needs to be ignored cuz MKDIR expands and mode is not used
+	
+    if (MEOF(path)) return MRetError(MmkdirResult, "path may not be null");
 
-    if (!path) return MRetError(MmkdirResult, "path may not be null");
-
-    if (MKDIR(path, permission) == -1)
+	char* p = quick_strndup(path.raw, path.length);
+    if (MKDIR(p, permission) == -1) {
+		free(p);
         return MRetError(MmkdirResult, strerror(errno));
-
+    }
+    
+    free(p);
     return MRetValue(MmkdirResult, path);
 }
 
 MRetErrDefine(MstrView, char*, MfileResult)
-mfile_read(MVecParamDefPtr(*pool, char), const char* filename) {
-    FILE* file = fopen(filename, "rb");
+mfile_read(MVecParamDefPtr(*pool, char), MstrView filename) {
+	if (MEOF(filename)) return MRetError(MfileResult, "filename may not be null");
+	char* p = quick_strndup(filename.raw, filename.length);
+    FILE* file = fopen(p, "rb");
     if (!file) return MRetError(MfileResult, strerror(errno));
 
     if (fseek(file, 0, SEEK_END) != 0) {
@@ -53,15 +59,18 @@ mfile_read(MVecParamDefPtr(*pool, char), const char* filename) {
 
     buffer[bytes_read] = '\0';
     fclose(file);
+    free(p);
     return MRetValue(MfileResult, MstrViewFrom(buffer, 0, bytes_read));
 }
 
 MRetErrDefine(MstrView, char*, MfileCreateResult)
-mfile_create(const char* path, MstrView contents) {
-    if (!path || !contents.raw) {
+mfile_create(MstrView path, MstrView contents) {
+    if (MEOF(path) || !contents.raw) {
         return MRetError(MfileCreateResult, "Parameters for file creation may be null");
     }
-    FILE* file = fopen(path, "wb");
+
+    char* p = quick_strndup(path.raw, path.length);
+    FILE* file = fopen(p, "wb");
     if (!file) return MRetError(MfileCreateResult, strerror(errno));
 
     size_t written = fwrite(contents.raw, 1, contents.length, file);
