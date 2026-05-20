@@ -1,71 +1,43 @@
 
 #include <stdint.h>
+#include <assert.h>
 #include "mstr.h"
 #include "merrval.h"
-
-int mfile_mkdir_path(char** path, int permission) {
-    if (mkdir(*path, permission) == -1) {
-        wrap_fail(path) = strdup(strerror(errno));
-        return 1;
-    }
-
-    return 0;
-}
-
-MstrView mfile_read (MVecParamDefPtr(*pool, char), const char* filename) {
-	FILE* file = fopen(filename, "rb");
-	if (!file) {
-		return EMPTYVIEW(MstrView);
-	}
-
-	fseek(file, 0, SEEK_END);
-	long buffer_len = ftell(file);
-	rewind(file);
-
-	char* buffer = MVecPoolAlloc(MVecParamRefPtr(pool), sizeof(char[buffer_len]));
-	fread(buffer, 1, buffer_len, file);
-	fclose(file);
-	return MstrViewFrom(buffer, 0, buffer_len);
-}
-
-int mfile_create(char** out, char* path, char* contents) {
-	if (!out || !path || !contents) {
-		wrap_fail(out) = strdup("Parameters for file creation may be null");
-        return 1;
-    }
-
-	FILE* file = fopen(path, "w");
-	
-    if (file == NULL) {
-        wrap_fail(out) = strdup(strerror(errno));
-        return 1;
-    }
-    
-    if (fputs(contents, file) == EOF) {
-        wrap_fail(out) = strdup(strerror(errno));
-        fclose(file);
-        return 1;
-    }
-
-    if (fclose(file) == EOF) {
-        wrap_fail(out) = strdup(strerror(errno));
-        return 1;
-    }
-    
-    *out = contents;
-	return 0;
-}
-
+#include "mfile.h"
 
 int main()
 {
 	MVecAlloc(pool, char, 100);
-	MstrView file = mfile_read(MVecParamRefPtr(&pool), "main.c");
 
-	MstrView right = {0}, left = MstrSplitView(file, '\n', &right);
-	while(!MEOF(left = MstrSplitView(right, '\n', &right))){
-		MPRINT_FMT("LINE: "MstrViewFmt(left)"|");	
-	}
+    MRetEither(dir, err1, mfile_mkdir_path("./test_dir", 0755));
+    assert(err1 == NULL);
+    assert(dir != NULL);
+
+    MRetEither(dir2, err2, mfile_mkdir_path(NULL, 0755));
+    assert(err2 != NULL);
+    MPRINT_FMT("expected file create failure -------- *: "$(err2));
+    UNUSED(dir2);
+
+    MstrView content = MstrViewFrom("hello\nworld", 0, 11);
+
+    MRetEither(file, err3, mfile_create("./test_dir/test.txt", content));
+    assert(err3 == NULL);
+    assert(file.raw != NULL);
+    assert(file.length == 11);
+
+    MRetEither(file2, err4, mfile_create(NULL, content));
+    assert(err4 != NULL);
+    MPRINT_FMT("expected file create failure -------- *: "$(err4));
+    UNUSED(file2);
+
+    MRetEither(file3, err5, mfile_read(MVecParamRefPtr(&pool), "./test_dir/test.txt"));
+    assert(err5 == NULL);
+    
+	MstrView left = {0}, right = file3;
+	while(!MEOF(left = MstrSplitView(right, '\n', &right))) {
+		MPRINT_FMT("LINE: "MstrViewFmt(left)"|");
+	};
+	MPRINT_FMT("FILE: "MstrViewFmt(file3));
 
 	free(MVec(pool));
 	return 0;

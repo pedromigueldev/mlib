@@ -99,8 +99,8 @@ MstrView mstr_split_when_view(MstrView string, const char delim, MstrView* outVi
     }
     
     if (count >= (int)string.length) {
-        *outView = MstrViewFrom(string, 0);
-        return EMPTYVIEW(MstrView);
+        *outView = EMPTYVIEW(MstrView);
+        return MstrViewFrom(string, 0);
     }
     
     *outView = MstrViewFrom(string, count + 1);

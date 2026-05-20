@@ -2,68 +2,76 @@
 #define MFILEH
 #include "mlib.h"
 #include "mstr.h"
+#include "merrval.h"
 
-int mfile_mkdir_path_tryfail(char** path, int permission) {
-    if (mkdir(*path, permission) == -1) {
-        wrap_fail(path) = strdup(strerror(errno));
-        return 1;
-    }
+#ifdef _WIN32
+#include <direct.h>
+#define MKDIR(path, mode) _mkdir(path)
+#else
+#include <sys/stat.h>
+#define MKDIR(path, mode) mkdir(path, mode)
+#endif
 
-    return 0;
+MRetErrDefine(const char*, char*, MmkdirResult)
+mfile_mkdir_path(const char* path, int permission) {
+    UNUSED(permission); // on windows needs to be ignored cuz MKDIR expands and mode is not used
+
+    if (!path) return MRetError(MmkdirResult, "path may not be null");
+
+    if (MKDIR(path, permission) == -1)
+        return MRetError(MmkdirResult, strerror(errno));
+
+    return MRetValue(MmkdirResult, path);
 }
 
-int mfile_read_tryfail (Mstr** buffer_out, const char* filename) {
-	FILE* file = fopen(filename, "rb");
-	
-	if (!file) {
-		char* error = strerror(errno);
-		catch(mstr_from, buffer_out, error) {};
-		return 1;
-	}
+MRetErrDefine(MstrView, char*, MfileResult)
+mfile_read(MVecParamDefPtr(*pool, char), const char* filename) {
+    FILE* file = fopen(filename, "rb");
+    if (!file) return MRetError(MfileResult, strerror(errno));
 
-	fseek(file, 0, SEEK_END);
-	long buffer_len = ftell(file);
-	rewind(file);
-	char* buffer = malloc(buffer_len + 1);
-	fread(buffer, 1, buffer_len, file);
-	buffer[buffer_len] = '\0';
-	fclose(file);
-
-	catch(mstr_from, buffer_out, buffer) {
-		fprintf(stderr, "It was not possible to create file buffer: %s\n", unwrap_fail(*buffer_out));
-		return 1;
-	};
-
-	free(buffer);
-	return 0;
-}
-
-int mfile_create_tryfail(char** out, char* path, char* contents) {
-	if (!out || !path || !contents) {
-		wrap_fail(out) = strdup("Parameters for file creation may be null");
-        return 1;
-    }
-
-	FILE* file = fopen(path, "w");
-	
-    if (file == NULL) {
-        wrap_fail(out) = strdup(strerror(errno));
-        return 1;
-    }
-    
-    if (fputs(contents, file) == EOF) {
-        wrap_fail(out) = strdup(strerror(errno));
+    if (fseek(file, 0, SEEK_END) != 0) {
         fclose(file);
-        return 1;
+        return MRetError(MfileResult, strerror(errno));
     }
 
-    if (fclose(file) == EOF) {
-        wrap_fail(out) = strdup(strerror(errno));
-        return 1;
+    long buffer_len = ftell(file);
+    if (buffer_len < 0) {
+        fclose(file);
+        return MRetError(MfileResult, strerror(errno));
     }
-    
-    *out = contents;
-	return 0;
+
+    rewind(file);
+
+    char* buffer = MVecPoolAlloc(MVecParamRefPtr(pool), sizeof(char) * (buffer_len + 1));
+
+    size_t bytes_read = fread(buffer, 1, buffer_len, file);
+
+    if (bytes_read != (size_t)buffer_len && ferror(file)) {
+	    fclose(file);
+	    return MRetError(MfileResult, strerror(errno));
+    }
+
+    buffer[bytes_read] = '\0';
+    fclose(file);
+    return MRetValue(MfileResult, MstrViewFrom(buffer, 0, bytes_read));
+}
+
+MRetErrDefine(MstrView, char*, MfileCreateResult)
+mfile_create(const char* path, MstrView contents) {
+    if (!path || !contents.raw) {
+        return MRetError(MfileCreateResult, "Parameters for file creation may be null");
+    }
+    FILE* file = fopen(path, "wb");
+    if (!file) return MRetError(MfileCreateResult, strerror(errno));
+
+    size_t written = fwrite(contents.raw, 1, contents.length, file);
+    if (written != contents.length) {
+        fclose(file);
+        return MRetError(MfileCreateResult, strerror(errno));
+    }
+
+    fclose(file);
+    return MRetValue(MfileCreateResult, contents);
 }
 
 #endif
