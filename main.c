@@ -4,6 +4,7 @@
 #include "mstr.h"
 #include "merrval.h"
 #include "mfile.h"
+#include "mprint.h"
 
 int main()
 {
@@ -15,7 +16,7 @@ int main()
 
     MRetEither(dir2, err2, mfile_mkdir_path(NULL, 0755));
     assert(err2 != NULL);
-    MPRINT_FMT("expected file create failure -------- *: "$(err2));
+    MPrintFmt("expected file create failure -------- *: "$(err2));
     UNUSED(dir2);
 
     MstrView content = MstrViewFrom("hello\nworld", 0, 11);
@@ -27,7 +28,7 @@ int main()
 
     MRetEither(file2, err4, mfile_create(NULL, content));
     assert(err4 != NULL);
-    MPRINT_FMT("expected file create failure -------- *: "$(err4));
+    MPrintFmt("expected file create failure -------- *: "$(err4));
     UNUSED(file2);
 
     MRetEither(file3, err5, mfile_read(MVecParamRefPtr(&pool), "./test_dir/test.txt"));
@@ -35,9 +36,9 @@ int main()
     
 	MstrView left = {0}, right = file3;
 	while(!MEOF(left = MstrSplitView(right, '\n', &right))) {
-		MPRINT_FMT("LINE: "MstrViewFmt(left)"|");
+		MPrintFmt("LINE:"MstrViewFmt(left));
 	};
-	MPRINT_FMT("FILE: "MstrViewFmt(file3));
+	MPrintFmt("FILE: "MstrViewFmt(file3));
 
 	free(MVec(pool));
 	return 0;
