@@ -16,6 +16,7 @@
 #define UNIQUE_NAME(base) CONCAT_EXPAND(base, __LINE__)
 #define UNUSED(x) (void)(x)
 #define MstrFmt(x) _3_$("%.*s", (x)->length, (x)->raw)
+#define MstrViewFmt(x) _3_$("%.*s", (x).length, (x).raw)
 
 #define ENSURE_NOT_NULL(ptr)                  \
         do {                                      \

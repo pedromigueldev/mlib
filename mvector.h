@@ -71,7 +71,7 @@ static inline void* MVecPushImpl(MVecParamDefPtr(*vec, uintptr_t), uintptr_t dat
 
 void* MVecPoolAlloc(MVecParamDefPtr(*pool, char), size_t size) {
     if (size >= MVecCap(*pool)) {
-        MVecCap(*pool) *= 2;
+        MVecCap(*pool) *= 2 + size;
 		MVec(*pool) = MVECREALLOC(*pool, MVecCap(*pool) *  MVecItemSize(*pool));
     }
     (MVecLen(*pool)) += size;

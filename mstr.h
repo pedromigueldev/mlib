@@ -7,13 +7,6 @@ typedef struct {
 	char raw[];
 } Mstr;
 
-static Mstr MstrEmpty = ((Mstr) {
-    .length = 0,
-    .raw = "",
-});
-
-static Mstr* EMPTY = &MstrEmpty;
-
 typedef struct {
 	size_t length;
 	char* raw;
@@ -64,14 +57,12 @@ MstrView mstr_trim_right(MstrView view) {
 }
 
 MstrView mstr_trim_view(MstrView view) {
-    if (view.length <= 0) return MstrViewFrom(EMPTY, 0);
     MstrView new = mstr_trim_left(view);
     new = mstr_trim_right(new);
     return MstrViewFrom(new, 0);
 }
 
 MstrView mstr_trim_mstr(Mstr* view) {
-    if (view->length <= 0) return MstrViewFrom(EMPTY, 0);
     MstrView new = mstr_trim_left(MstrViewFrom(view, 0));
     new = mstr_trim_right(new);
     return MstrViewFrom(new, 0);
@@ -82,19 +73,38 @@ MstrView mstr_trim_mstr(Mstr* view) {
         Mstr*: mstr_trim_mstr, \
         MstrView: mstr_trim_view \
     )(string)
-    
+
+bool MEOF(MstrView view) {
+	return view.raw == NULL;
+}
+
+#define EMPTYVIEW(type) \
+		_Generic(type, \
+			Mstr*: NULL,\
+			MstrView: ((MstrView) {\
+	            .length = 0,\
+	            .raw = NULL\
+	        })\
+	   	)
+        
 MstrView mstr_split_when_view(MstrView string, const char delim, MstrView* outView) {
-    int count = 0;
-    while(string.raw[count] != delim && count <= (int)string.length)
-        count++;
+    if (string.raw == NULL) {
+        *outView = EMPTYVIEW(MstrView);
+        return EMPTYVIEW(MstrView);
+    }
     
-    if (count == (int)string.length) {
+    int count = 0;
+    while (count < (int)string.length && string.raw[count] != delim) {
+        count++;
+    }
+    
+    if (count >= (int)string.length) {
         *outView = MstrViewFrom(string, 0);
-        return MstrViewFrom(EMPTY, 0);
-    };
+        return EMPTYVIEW(MstrView);
+    }
     
     *outView = MstrViewFrom(string, count + 1);
-    return ((MstrView) {
+    return ((MstrView){
         .length = count,
         .raw = string.raw
     });
@@ -104,10 +114,9 @@ MstrView mstr_split_when_view(MstrView string, const char delim, MstrView* outVi
     mstr_split_when_view(_Generic((string), Mstr*: MstrViewFrom(string, 0), MstrView: string), __VA_ARGS__)
     
 Mstr* mstr_string_from_pool(MVecParamDefPtr(*pool, char), const char* string) {
-    if (string == NULL) return EMPTY;
-    
+    if (string == NULL) return EMPTYVIEW(Mstr*);
     size_t str_len = strlen(string);
-    if (str_len == 0) return EMPTY;
+    if (str_len == 0) return EMPTYVIEW(Mstr*);
     
     Mstr* ret = MVecPoolAlloc(MVecParamRefPtr(pool), sizeof(Mstr) + sizeof(char[str_len]));
     if (ret == NULL) {
