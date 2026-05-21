@@ -2,25 +2,7 @@
 #define MARR_H
 #include <stdint.h>
 #include <stddef.h>
-
-#define __cleanup(func) __attribute__((__cleanup__(func)))
-static inline __attribute__((__must_check__)) void *__must_check_ptr(void *p) {
-    return p;
-}
-
-#define no_free_ptr(p) __must_check_ptr(({ \
-    __auto_type __ptr = (p); \
-    (p) = NULL; \
-    __ptr; \
-}))
-#define DEFINE_FREE(name, type, free_func) \
-    static inline void __free_##name(void *p) { \
-        type _T = *(type *)p; \
-        if (_T) \
-            free_func(_T); \
-    }    
-#define __free(name) __cleanup(__free_##name)
-
+#include "mlib.h"
 
 typedef struct {
 	size_t length;

@@ -11,6 +11,26 @@
 #include <errno.h>
 #include <stdarg.h>
 
+#define __cleanup(func) __attribute__((__cleanup__(func)))
+static inline __attribute__((__must_check__)) void *__must_check_ptr(void *p) {
+    return p;
+}
+
+#define no_free_ptr(p) __must_check_ptr(({ \
+    __auto_type __ptr = (p); \
+    (p) = NULL; \
+    __ptr; \
+}))
+#define DEFINE_FREE(name, type, free_func) \
+    static inline void __free_##name(void *p) { \
+        type _T = *(type *)p; \
+        if (_T) \
+            free_func(_T); \
+    }    
+#define __free(name) __cleanup(__free_##name)
+
+DEFINE_FREE(strfree, char*, free);
+
 #define CONCAT(a, b) a##b
 #define CONCAT_EXPAND(a, b) CONCAT(a, b)
 #define UNIQUE_NAME(base) CONCAT_EXPAND(base, __LINE__)
