@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 #define MVECALLOC(ptr, length) malloc((length) * sizeof(MVec(ptr)[0]))
-#define MVECREALLOC(ptr, length) realloc(MVec(ptr), length);
+#define MVECREALLOC(ptr, length) realloc(MVec(ptr), (length));
 #define MVec(ptr) ptr##_arr
 #define MVecCap(ptr) ptr##_arr_cap
 #define MVecLen(ptr) ptr##_arr_len
@@ -27,17 +27,17 @@
 
 static inline void* MVecGetImpl(MVecParamDefPtr(*vec, uintptr_t), size_t index, size_t sizeofVecItem) {
 	UNUSED(MVecCap(vec));
-    if (index >= MVecLen(*vec)) {
+    if (index > MVecLen(*vec)) {
         errno = ERANGE;
         fprintf(stderr, "Error accessing index %zu (length: %zu): %s\n",
                 index, MVecLen(*vec), strerror(ERANGE));
-        exit(69);
+        exit(24);
     }
     return (char*)*MVec(vec) + (index * sizeofVecItem);
 }
 
 static inline void* MVecSetImpl(MVecParamDefPtr(*vec, uintptr_t), size_t index, uintptr_t data, size_t sizeofVecItem) {
-    if (index >= MVecLen(*vec)) {
+    if (index > MVecLen(*vec)) {
         errno = ERANGE;
         fprintf(stderr, "Error setting index %zu (length: %zu): %s\n",
                 index, MVecLen(*vec), strerror(ERANGE));
@@ -53,7 +53,7 @@ static inline void* MVecPushImpl(MVecParamDefPtr(*vec, uintptr_t), uintptr_t dat
     if (MVecLen(*vec) >= MVecCap(*vec)) {
         MVecCap(*vec) *= 2;
 		MVec(*vec) = MVECREALLOC(*vec, MVecCap(*vec) * sizeofVecItem);
-    }
+    }	
     (MVecLen(*vec)) += 1;
 
     char* target = MVecGetImpl(MVecParamRefPtr(vec), MVecLen(*vec) - 1, sizeofVecItem);
@@ -69,15 +69,37 @@ static inline void* MVecPushImpl(MVecParamDefPtr(*vec, uintptr_t), uintptr_t dat
 #define MVecSet(ptr, index, data) \
     *(__typeof__(MVec(ptr))) MVecSetImpl((uintptr_t**)MVecParamRefPtr(&ptr), index, (uintptr_t)data, MVecItemSize(ptr))
 
-void* MVecPoolAlloc(MVecParamDefPtr(*pool, char), size_t size) {
-    if (size >= MVecCap(*pool)) {
-        MVecCap(*pool) *= 2 + size;
-		MVec(*pool) = MVECREALLOC(*pool, MVecCap(*pool) *  MVecItemSize(*pool));
+void* MVecPoolAlloc(MVecParamDefPtr(*pool, char), size_t size)
+{
+    size_t needed = *pool_arr_len + size;
+
+    if (needed > *pool_arr_cap) {
+        size_t new_cap = *pool_arr_cap ? *pool_arr_cap * 2 : 1;
+        while (new_cap < needed)
+            new_cap *= 2;
+
+        *pool_arr_cap = new_cap;
+
+        *pool_arr = MVECREALLOC(
+            *pool,
+            *pool_arr_cap * MVecItemSize(*pool)
+        );
     }
-    (MVecLen(*pool)) += size;
-    
-    return &MVecGet(*pool, MVecLen(*pool) - size);
+
+    size_t start = *pool_arr_len;
+    *pool_arr_len += size;
+
+    return &MVecGet(*pool, start);
 }
 
+void* MVecPoolPop(MVecParamDefPtr(*pool, char), size_t size) {
+    if (size > *pool_arr_len) {
+        *pool_arr_len = 0;
+    } else {
+        *pool_arr_len -= size;
+    }
+    
+    return &MVecGet(*pool, *pool_arr_len);
+}
 
 #endif

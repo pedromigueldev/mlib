@@ -56,18 +56,18 @@ MstrView mstr_view_string_len(char* string, size_t from, size_t length) {
             ) (string, __VA_ARGS__)
             
 MstrView mstr_trim_left(MstrView view) {
-    int count = 0;
-    while(view.raw[count] == ' ') count++;
+    size_t count = 0;
+    while(view.raw[count] == ' ' && count <= view.length) count++;
     return MstrViewFrom(view, count);
 }
 
 MstrView mstr_trim_right(MstrView view) {
-    int count = view.length;
-    while(view.raw[count - 1] == ' ') 
+    size_t count = view.length;
+    while(view.raw[count - 1] == ' ' && count <= view.length) 
         count--;
         
     return ((MstrView) {
-        .length = count > (int)view.length ? 0 : count,
+        .length = count > view.length ? 0 : count,
         .raw = view.raw
     });
 }
@@ -109,12 +109,12 @@ MstrView mstr_split_when_view(MstrView string, const char delim, MstrView* outVi
         return EMPTYVIEW(MstrView);
     }
     
-    int count = 0;
-    while (count < (int)string.length && string.raw[count] != delim) {
+    size_t count = 0;
+    while (count < string.length && string.raw[count] != delim) {
         count++;
     }
     
-    if (count >= (int)string.length) {
+    if (count >= string.length) {
         *outView = EMPTYVIEW(MstrView);
         return MstrViewFrom(string, 0);
     }

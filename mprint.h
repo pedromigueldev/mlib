@@ -14,23 +14,28 @@ MstrView mprint_fmt_ln_v(MVecParamDefPtr(*pool, char), const char *first, va_lis
             int len = va_arg(args_copy, int);
             char* str = va_arg(args_copy, char*);
         
-            int needed = snprintf(NULL, 0, fmt, len, str);
-
-            char* handle = MVecPoolAlloc(MVecParamRefPtr(pool), needed);
-            snprintf(handle, needed + 1, fmt, len, str);
+			int needed = snprintf(NULL, 0, fmt, len, str);
+			if (needed > 0) {
+				size_t length = (size_t)needed;
+	            char* handle = MVecPoolAlloc(MVecParamRefPtr(pool), length);
+	            snprintf(handle, length + 1, fmt, len, str);
+			}
         }
 		else if (starts_with(fmt, "%")) {
             void* variable = va_arg(args_copy, void*);
         
             int needed = snprintf(NULL, 0, fmt, variable);
-        
-            char* handle = MVecPoolAlloc(MVecParamRefPtr(pool), needed);
-            snprintf(handle, needed + 1, fmt, variable);
+            if (needed > 0) {
+   				size_t length = (size_t)needed;
+	            char* handle = MVecPoolAlloc(MVecParamRefPtr(pool), length);
+	            snprintf(handle, length + 1, fmt, variable);
+            }
         } else {
 		    int needed = snprintf(NULL, 0, "%s", fmt);
 		    if (needed > 0) {
-    		    char* handle = MVecPoolAlloc(MVecParamRefPtr(pool), needed);
-    			memcpy(handle, fmt, needed + 1);
+		    	size_t length = (size_t)needed;
+    		    char* handle = MVecPoolAlloc(MVecParamRefPtr(pool), length);
+    			memcpy(handle, fmt, length);
 		    }
 		}
 		

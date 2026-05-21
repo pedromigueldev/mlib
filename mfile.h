@@ -13,7 +13,7 @@
 #endif
 
 MRetErrDefine(MstrView, char*, MmkdirResult)
-mfile_mkdir_path(MstrView path, int permission) {
+mfile_mkdir_path(MstrView path, __mode_t permission) {
     UNUSED(permission); // on windows needs to be ignored cuz MKDIR expands and mode is not used
 	
     if (MEOF(path)) return MRetError(MmkdirResult, "path may not be null");
@@ -41,18 +41,18 @@ mfile_read(MVecParamDefPtr(*pool, char), MstrView filename) {
     }
 
     long buffer_len = ftell(file);
+    size_t buffer_len_a0 = (size_t)buffer_len;
     if (buffer_len < 0) {
         fclose(file);
         return MRetError(MfileResult, strerror(errno));
     }
 
+
     rewind(file);
+    char* buffer = MVecPoolAlloc(MVecParamRefPtr(pool), sizeof(char) * (buffer_len_a0 + 1));
+    size_t bytes_read = fread(buffer, 1, buffer_len_a0, file);
 
-    char* buffer = MVecPoolAlloc(MVecParamRefPtr(pool), sizeof(char) * (buffer_len + 1));
-
-    size_t bytes_read = fread(buffer, 1, buffer_len, file);
-
-    if (bytes_read != (size_t)buffer_len && ferror(file)) {
+    if (bytes_read != buffer_len_a0 && ferror(file)) {
 	    fclose(file);
 	    return MRetError(MfileResult, strerror(errno));
     }
@@ -71,15 +71,20 @@ mfile_create(MstrView path, MstrView contents) {
 
     char* p = quick_strndup(path.raw, path.length);
     FILE* file = fopen(p, "wb");
-    if (!file) return MRetError(MfileCreateResult, strerror(errno));
+    if (!file) {
+    	free(p);
+    	return MRetError(MfileCreateResult, strerror(errno));
+    }
 
     size_t written = fwrite(contents.raw, 1, contents.length, file);
     if (written != contents.length) {
+    	free(p);
         fclose(file);
         return MRetError(MfileCreateResult, strerror(errno));
     }
 
     fclose(file);
+    free(p);
     return MRetValue(MfileCreateResult, contents);
 }
 
