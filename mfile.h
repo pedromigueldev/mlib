@@ -30,7 +30,7 @@ MRetDefine(MstrView, MmkdirResult) mfile_mkdir_path(MstrView path, __mode_t perm
 
 #define MfileReadCstr(pool, cstring) mfile_read(pool, MstrViewFrom(cstring, 0, strlen(cstring)))
 #define MfileReadView(pool, view) mfile_read(pool, view)
-MRetDefine(MstrView, MfileResult) mfile_read(MVecParamDefPtr(*pool, char), MstrView filename) {
+MRetDefine(MstrView, MfileResult) mfile_read(char** MVecDef(pool), MstrView filename) {
 	if (MEOF(filename)) {
 		errno = EINVAL;
 		return MRetError(MfileResult);
@@ -55,7 +55,7 @@ MRetDefine(MstrView, MfileResult) mfile_read(MVecParamDefPtr(*pool, char), MstrV
 
 
     rewind(file);
-    char* buffer = MVecPoolAlloc(MVecParamRefPtr(pool), sizeof(char) * (buffer_len_a0 + 1));
+    char* buffer = MVecPoolAlloc(&MVecRef(*pool), sizeof(char) * (buffer_len_a0 + 1));
     size_t bytes_read = fread(buffer, 1, buffer_len_a0, file);
 
     if (bytes_read != buffer_len_a0 && ferror(file)) {

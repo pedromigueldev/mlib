@@ -93,8 +93,7 @@ void* MVecPoolAlloc(char** MVecDef(pool), size_t size)
 
     size_t start = *pool_arr_len;
     *pool_arr_len += size;
-
-    return MVecGet(*pool, start);
+    return MVec(*pool) + start;
 }
 
 static inline void* MVecPoolPop(char** MVecDef(pool), size_t size) {
@@ -105,7 +104,7 @@ static inline void* MVecPoolPop(char** MVecDef(pool), size_t size) {
         *pool_arr_len -= size;
     }
     
-    return MVecGet(*pool, *pool_arr_len);
+    return MVec(*pool) + *pool_arr_len;
 }
 
 #endif

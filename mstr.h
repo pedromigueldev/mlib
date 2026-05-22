@@ -1,7 +1,7 @@
 #ifndef MSTRH
 #define MSTRH
-#include "mvector.h"
-
+#include "mvec.h"
+	   	
 char *quick_strndup(const char *s, size_t n)
 {
     size_t len = 0;
@@ -27,6 +27,19 @@ typedef struct {
 	size_t length;
 	char* raw;
 } MstrView;
+
+bool MEOF(MstrView view) {
+	return view.raw == NULL;
+}
+
+#define EMPTYVIEW(type) \
+		_Generic(type, \
+			Mstr*: NULL,\
+			MstrView: ((MstrView) {\
+	            .length = 0,\
+	            .raw = NULL\
+	        })\
+	   	)
 
 MstrView mstr_view_mstr(Mstr* string, size_t from) {
     return ((MstrView) {
@@ -57,13 +70,13 @@ MstrView mstr_view_string_len(char* string, size_t from, size_t length) {
             
 MstrView mstr_trim_left(MstrView view) {
     size_t count = 0;
-    while(view.raw[count] == ' ' && count <= view.length) count++;
+    while(view.raw != NULL && view.raw[count] == ' ') count++;
     return MstrViewFrom(view, count);
 }
 
 MstrView mstr_trim_right(MstrView view) {
     size_t count = view.length;
-    while(view.raw[count - 1] == ' ' && count <= view.length) 
+    while(view.raw != NULL && view.raw[count - 1] == ' ') 
         count--;
         
     return ((MstrView) {
@@ -89,52 +102,39 @@ MstrView mstr_trim_mstr(Mstr* view) {
         Mstr*: mstr_trim_mstr, \
         MstrView: mstr_trim_view \
     )(string)
-
-bool MEOF(MstrView view) {
-	return view.raw == NULL;
-}
-
-#define EMPTYVIEW(type) \
-		_Generic(type, \
-			Mstr*: NULL,\
-			MstrView: ((MstrView) {\
-	            .length = 0,\
-	            .raw = NULL\
-	        })\
-	   	)
         
-MstrView mstr_split_when_view(MstrView string, const char delim, MstrView* outView) {
-    if (string.raw == NULL) {
+MstrView mstr_split_when_view(MstrView string, char delim, MstrView* outView) {
+    if (string.raw == NULL || string.length == 0) {
         *outView = EMPTYVIEW(MstrView);
         return EMPTYVIEW(MstrView);
     }
-    
+
     size_t count = 0;
     while (count < string.length && string.raw[count] != delim) {
         count++;
     }
-    
-    if (count >= string.length) {
+
+    if (count == string.length) {
         *outView = EMPTYVIEW(MstrView);
-        return MstrViewFrom(string, 0);
+        return string;
     }
-    
+
     *outView = MstrViewFrom(string, count + 1);
-    return ((MstrView){
-        .length = count,
-        .raw = string.raw
-    });
+    return (MstrView){
+        .raw = string.raw,
+        .length = count
+    };
 }
 
 #define MstrSplitView(string, ...) \
     mstr_split_when_view(_Generic((string), Mstr*: MstrViewFrom(string, 0), MstrView: string), __VA_ARGS__)
     
-Mstr* mstr_string_from_pool(MVecParamDefPtr(*pool, char), const char* string) {
+Mstr* mstr_string_from_pool(char** MVecDef(pool), const char* string) {
     if (string == NULL) return EMPTYVIEW(Mstr*);
     size_t str_len = strlen(string);
     if (str_len == 0) return EMPTYVIEW(Mstr*);
     
-    Mstr* ret = MVecPoolAlloc(MVecParamRefPtr(pool), sizeof(Mstr) + sizeof(char[str_len]));
+    Mstr* ret = MVecPoolAlloc(&MVecRef(*pool), sizeof(Mstr) + sizeof(char[str_len]));
     if (ret == NULL) {
         fprintf(stderr,"Not enough memory");
         exit(1);

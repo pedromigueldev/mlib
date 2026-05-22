@@ -2,7 +2,7 @@
 #define MPRINT_H
 #include "mstr.h"
 
-MstrView mprint_fmt_ln_v(MVecParamDefPtr(*pool, char), const char *first, va_list args) {
+MstrView mprint_fmt_ln_v(char** MVecDef(pool), const char *first, va_list args) {
 	size_t start_len = MVecLen(*pool);
 	
 	va_list args_copy;
@@ -17,7 +17,7 @@ MstrView mprint_fmt_ln_v(MVecParamDefPtr(*pool, char), const char *first, va_lis
 			int needed = snprintf(NULL, 0, fmt, len, str);
 			if (needed > 0) {
 				size_t length = (size_t)needed;
-	            char* handle = MVecPoolAlloc(MVecParamRefPtr(pool), length);
+	            char* handle = MVecPoolAlloc(&MVecRef(*pool), length);
 	            snprintf(handle, length + 1, fmt, len, str);
 			}
         }
@@ -27,14 +27,14 @@ MstrView mprint_fmt_ln_v(MVecParamDefPtr(*pool, char), const char *first, va_lis
             int needed = snprintf(NULL, 0, fmt, variable);
             if (needed > 0) {
    				size_t length = (size_t)needed;
-	            char* handle = MVecPoolAlloc(MVecParamRefPtr(pool), length);
+	            char* handle = MVecPoolAlloc(&MVecRef(*pool), length);
 	            snprintf(handle, length + 1, fmt, variable);
             }
         } else {
 		    int needed = snprintf(NULL, 0, "%s", fmt);
 		    if (needed > 0) {
 		    	size_t length = (size_t)needed;
-    		    char* handle = MVecPoolAlloc(MVecParamRefPtr(pool), length);
+    		    char* handle = MVecPoolAlloc(&MVecRef(*pool), length);
     			memcpy(handle, fmt, length);
 		    }
 		}
@@ -46,19 +46,19 @@ MstrView mprint_fmt_ln_v(MVecParamDefPtr(*pool, char), const char *first, va_lis
 	return MstrViewFrom(MVec(*pool) + start_len, 0, (MVecLen(*pool) - start_len));
 }
 
-MstrView mstr_fmt_ln(MVecParamDefPtr(*pool, char), const char *first, ...) {
+MstrView mstr_fmt_ln(char** MVecDef(pool), const char *first, ...) {
 	va_list args;
 	va_start(args, first);
-	MstrView print_b = mprint_fmt_ln_v(MVecParamRefPtr(pool), first, args);
+	MstrView print_b = mprint_fmt_ln_v(&MVecRef(*pool), first, args);
 	va_end(args);
 	return print_b;
 }
 
 void mprint_fmt_ln(const char *first, ...) {
-    MVecAlloc(pool, char, 1000);
+    char* MVecAlloc(pool, 1000);
 	va_list args;
 	va_start(args, first);
-	MstrView print_b = mprint_fmt_ln_v(MVecParamRefPtr(&pool), first, args);
+	MstrView print_b = mprint_fmt_ln_v(&MVecRef(pool), first, args);
 	printf("%.*s\n", (int)print_b.length, print_b.raw);
 	free(MVec(pool));
 	va_end(args);

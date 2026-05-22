@@ -10,9 +10,8 @@
 
 int main(void)
 {
-	__free(strfree) MVecAlloc(pool, char, 100);
-
-    MRetEither(file, err, MfileReadCstr(MVecParamRefPtr(&pool), "./main.c"));
+	__free(strfree) char* MVecAlloc(pool, 100);
+    MRetEither(file, err, MfileReadCstr(&MVecRef(pool), "./main.c"));
     if (err) {
     	MPrintFmt("File read failed: "$(strerror(err)));
     	return 1;
