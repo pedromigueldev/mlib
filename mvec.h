@@ -2,16 +2,21 @@
 #define MVEC_H
 #include "mlib.h"
 
-#define MVECALLOC(ptr, bytes) malloc((bytes) * sizeof(MVec(ptr)[0]))
-#define MVECREALLOC(ptr, bytes) realloc(MVec(ptr), (bytes))
+#ifndef MVECALLOC
+	#define MVECALLOC(bytes) malloc(bytes)
+#endif
+#ifndef MVECREALLOC
+	#define MVECREALLOC(ptr, bytes) realloc((ptr), (bytes))
+#endif
+
 #define MVec(ptr) ptr##_arr
 #define MVecCap(ptr) ptr##_arr_cap
 #define MVecLen(ptr) ptr##_arr_len
 #define MVecItemSize(ptr) sizeof((MVec(ptr))[0])
 
-#define MVecAlloc(ptr, length)						\
-	MVec(ptr) = MVECALLOC(ptr, length); 				\
-	size_t MVecCap(ptr) = (length);							\
+#define MVecAlloc(ptr, bytes)						\
+	MVec(ptr) = MVECALLOC((bytes) * sizeof(MVec(ptr)[0])); 	\
+	size_t MVecCap(ptr) = (bytes);							\
 	size_t MVecLen(ptr) = 0
 
 #define MVecAllocDefault(ptr) MVecAlloc(ptr, 1000)
@@ -39,7 +44,7 @@
     do {                                                          \
         if (MVecLen(vec) >= MVecCap(vec)) {                       \
             MVecCap(vec) = MVecCap(vec) ? MVecCap(vec) * 2 : 1;  \
-            MVec(vec) = realloc(                                  \
+            MVec(vec) = MVECREALLOC(                                  \
                 MVec(vec),                                        \
                 MVecCap(vec) * sizeof(MVec(vec)[0])               \
             );                                                    \
@@ -81,7 +86,7 @@ void* MVecPoolAlloc(char** MVecDef(pool), size_t size)
         *pool_arr_cap = new_cap;
 
         *pool_arr = MVECREALLOC(
-            *pool,
+            *pool_arr,
             *pool_arr_cap * MVecItemSize(*pool)
         );
         

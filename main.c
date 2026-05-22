@@ -2,6 +2,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <assert.h>
+
+#define MLIB_ALLOCATOR(x, y) 
 #include "mlib.h"
 #include "mstr.h"
 #include "merrval.h"
