@@ -1,47 +1,97 @@
 #ifndef MARR_H
 #define MARR_H
-#include <stdint.h>
-#include <stddef.h>
-#include "mlib.h"
 
-typedef struct {
-	size_t length;
-	size_t capacity;
-	uintptr_t items[];
-} MarrImpl;
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
+  #define WARN_UNUSED_RESULT [[__nodiscard__]]
+#elif defined(__GNUC__) || defined(__clang__)
+  #define WARN_UNUSED_RESULT __attribute__((__warn_unused_result__))
+#elif defined(_MSC_VER)
+  #define WARN_UNUSED_RESULT _Check_return_
+#else
+  #define WARN_UNUSED_RESULT
+#endif
 
-#define MarrImplFrom(arr) ((MarrImpl*)((uintptr_t)(arr) - sizeof(MarrImpl)))
-#define MarrVerifyInit(some) \
-		do {\
-			if (some == NULL) {\
-			    size_t cap = 256 * sizeof(int);\
-			    MarrImpl* arr = malloc(sizeof(MarrImpl) + cap);\
-				arr->capacity = cap;\
-				arr->length = 0;\
-				some = (typeof(some))arr->items;\
-			}\
-			else if ((MarrImplFrom(some)->length+1) == MarrImplFrom(some)->capacity / sizeof(some[0])) {\
-			    MarrImpl* arr = MarrImplFrom(some);\
-                size_t new_capacity = arr->capacity * 2; \
-			    arr = realloc(arr, sizeof(MarrImpl) + new_capacity); \
-                if (arr != NULL) { \
-                    arr->capacity = new_capacity; \
-                    some = (typeof(some))arr->items; \
-                } \
-			}\
-		} while(0)
-		
-#define MarrPut(some, value)\
-    do {\
-		MarrVerifyInit(some);\
-		MarrImplFrom(some)->length++;\
-		some[MarrImplFrom(some)->length-1] = value;\
-    } while (0)
-    
-#define MarrLength(some) (some ? MarrImplFrom(some)->length : 0)
+#ifndef MVECALLOC
+	#define MVECALLOC(bytes) malloc(bytes)
+#endif
+#ifndef MVECREALLOC
+	#define MVECREALLOC(ptr, bytes) realloc((ptr), (bytes))
+#endif
+#ifndef MVECFREE
+	#define MVECFREE(ptr) free(ptr)
+#endif
 
-#define MarrForeach(item, ptr)\
-	if (MarrLength(ptr) > 0)																			\
-		for(int __k = 1, index = 0; __k && index < (int) MarrLength(ptr); __k = !__k, index++)   \
-			for(typeof (ptr[0]) item = (ptr)[index]; __k; __k = !__k)
+#define MArrDefine(type, Name)                                                          \
+    typedef struct {                                                                    \
+        size_t len, cap;                                                                \
+        type raw[];                                                                     \
+    } Name;                                                                             \
+    static inline Name* Name##Malloc(size_t size) {                                     \
+        size_t struct_size = sizeof(Name) + (size * sizeof(type));                      \
+        Name* temp = MVECALLOC(struct_size);                                            \
+        memset(temp, 0, struct_size);                                                   \
+        if (!temp) {                                                                    \
+            fprintf(stderr, "Error creating "#Name"\n");                                \
+            exit(69);                                                                   \
+            return NULL;                                                                \
+        }                                                                               \
+        temp->cap = size;                                                               \
+        return temp;                                                                    \
+    }                                                                                   \
+    static inline type* Name##PANIC(size_t index, size_t len) {                         \
+        errno = ERANGE;                                                                 \
+        fprintf(stderr, "Error accessing "#Name" index %zu (length: %zu): %s\n",        \
+                index, len, strerror(ERANGE));                                          \
+        exit(69);                                                                       \
+        return NULL;                                                                    \
+    }                                                                                   \
+    WARN_UNUSED_RESULT static inline Name* Name##Push(Name* vec, type data) {           \
+        if (vec->len >= vec->cap || vec->cap == 0) {                                    \
+            size_t new_cap = vec->cap ? vec->cap * 2 : 1;                               \
+            Name* new_vec = MVECREALLOC(vec,                                            \
+                sizeof(Name) + (new_cap * sizeof(type)));                               \
+            if (!new_vec) {                                                             \
+                fprintf(stderr, "Out of memory\n");                                     \
+                exit(1);                                                                \
+            }                                                                           \
+            new_vec->cap = new_cap;                                                     \
+            vec = new_vec;                                                              \
+        }                                                                               \
+        vec->raw[vec->len++] = (data);                                                  \
+        return vec;                                                                     \
+    }                                                                                   \
+    static inline type Name##Set(Name* vec, size_t index, type data) {                  \
+        if (index >= vec->len) Name##PANIC(index, vec->len);                            \
+        vec->raw[index] = data;                                                         \
+        return vec->raw[index];                                                         \
+    }                                                                                   \
+    static inline type Name##Get(Name* vec, size_t index) {                             \
+        return (index >= vec->len                                                       \
+                ? *Name##PANIC(index, vec->len)                                         \
+                : vec->raw[index]);                                                     \
+    }                                                                                   \
+    static inline type* Name##Ref(Name* vec, size_t index) {                            \
+        return (index >= vec->len                                                       \
+                ? Name##PANIC(index, vec->len)                                          \
+                : &vec->raw[index]);                                                    \
+    }                                                                                   \
+    static inline type Name##Pop(Name* vec) {                                           \
+        if (vec->len == 0) {                                                            \
+            errno = ERANGE;                                                             \
+            fprintf(stderr, "Error: cannot pop from empty "#Name"\n");                  \
+        } else vec->len--;                                                              \
+        return vec->raw[vec->len];                                                      \
+    }                                                                                   \
+    static inline void Name##Free(Name* vec) {                                          \
+        MVECFREE(vec);                                                                  \
+    }
+
+#define MArrForeach(typeitem, ptr)                                                      \
+    if (ptr->len > 0)                                                                   \
+        for (int __k = 1, index = 0;                                                    \
+             __k && index < (int)ptr->len;                                              \
+             __k = !__k, index++)                                                       \
+            for (typeitem = ptr->raw[index]; __k; __k = !__k)
+
+
 #endif
