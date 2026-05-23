@@ -65,6 +65,6 @@ void mprint_fmt_ln(const char *first, ...) {
 }
 
 #define MPrintFmt(...) mprint_fmt_ln(""__VA_ARGS__, NULL)
-#define MStrFmt(pool,...) mstr_fmt_ln(MVecParamRefPtr(pool), ""__VA_ARGS__, NULL)
+#define MStrFmt(pool,...) mstr_fmt_ln(pool, ""__VA_ARGS__, NULL)
 
 #endif
