@@ -2,8 +2,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <assert.h>
-
-#define MLIB_ALLOCATOR(x, y) 
 #include "mlib.h"
 #include "mstr.h"
 #include "merrval.h"
@@ -19,7 +17,7 @@ int main(void)
     	return 1;
     }
 	MstrView left = {0}, right = file;
-	while(!MEOF(left = MstrSplitView(right, '\n', &right))) {
+	while(!IsEmptyView(left = MstrSplitView(right, '\n', &right))) {
 		MPrintFmt("LINE:"MstrViewFmt(left));
 	};
 	MPrintFmt("FILE: "MstrViewFmt(file));

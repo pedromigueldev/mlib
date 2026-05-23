@@ -1,5 +1,6 @@
 #ifndef MFILEH
 #define MFILEH
+
 #include "mlib.h"
 #include "mstr.h"
 #include "merrval.h"
@@ -17,7 +18,7 @@
 MRetDefine(MstrView, MmkdirResult) mfile_mkdir_path(MstrView path, __mode_t permission) {
     UNUSED(permission); // on windows needs to be ignored cuz MKDIR expands and mode is not used
 	
-    if (MEOF(path)) {
+    if (IsEmptyView(path)) {
         errno = EINVAL; 
     	return MRetError(MmkdirResult);
     }
@@ -31,7 +32,7 @@ MRetDefine(MstrView, MmkdirResult) mfile_mkdir_path(MstrView path, __mode_t perm
 #define MfileReadCstr(pool, cstring) mfile_read(pool, MstrViewFrom(cstring, 0, strlen(cstring)))
 #define MfileReadView(pool, view) mfile_read(pool, view)
 MRetDefine(MstrView, MfileResult) mfile_read(char** MVecDef(pool), MstrView filename) {
-	if (MEOF(filename)) {
+	if (IsEmptyView(filename)) {
 		errno = EINVAL;
 		return MRetError(MfileResult);
 	}
@@ -70,7 +71,7 @@ MRetDefine(MstrView, MfileResult) mfile_read(char** MVecDef(pool), MstrView file
 
 MRetDefine(MstrView, MfileCreateResult)
 mfile_create(MstrView path, MstrView contents) {
-    if (MEOF(path) || !contents.raw) {
+    if (IsEmptyView(path) || !contents.raw) {
     	errno = EINVAL;
         return MRetError(MfileCreateResult);
     }
