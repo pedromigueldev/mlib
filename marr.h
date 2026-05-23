@@ -1,5 +1,6 @@
 #ifndef MARR_H
 #define MARR_H
+#include "mlib.h"
 
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
   #define WARN_UNUSED_RESULT [[__nodiscard__]]
@@ -84,8 +85,23 @@
     }                                                                                   \
     static inline void Name##Free(Name* vec) {                                          \
         MVECFREE(vec);                                                                  \
+    }																					\
+    static inline Name* Name##Reserve(Name* vec, size_t min_capacity) {					\
+        if (min_capacity > vec->cap) {													\
+            size_t new_cap = vec->cap ? vec->cap * 2 : 1;								\
+            while (new_cap < min_capacity)												\
+                new_cap *= 1.5;															\
+            Name* new_vec = MVECREALLOC(vec, sizeof(Name) + (new_cap * sizeof(type)));	\
+            if (!new_vec) {																\
+                fprintf(stderr, "Out of memory\n");										\
+                exit(1);																\
+            }																			\
+            new_vec->cap = new_cap;														\
+            return new_vec;																\
+        }																				\
+        return vec;																		\
     }
-
+    
 #define MArrForeach(typeitem, ptr)                                                      \
     if (ptr->len > 0)                                                                   \
         for (int __k = 1, index = 0;                                                    \
@@ -93,5 +109,5 @@
              __k = !__k, index++)                                                       \
             for (typeitem = ptr->raw[index]; __k; __k = !__k)
 
-
+MArrDefine(char, MByteArray);
 #endif

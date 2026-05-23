@@ -12,6 +12,7 @@
 #include "mlib.h"
 #include "mstr.h"
 #include "merrval.h"
+#include "marr.h"
 
 #define MfileMkdirCstr(x, cstring) MfileMkdir(MstrViewFrom(cstring, 0, strlen(cstring)), x)
 MstrView MfileMkdir(MstrView path, __mode_t permission) {
@@ -29,7 +30,7 @@ MstrView MfileMkdir(MstrView path, __mode_t permission) {
 }
 
 #define MfileReadCstr(pool, cstring) MfileRead(pool, MstrViewFrom(cstring, 0, strlen(cstring)))
-MstrView MfileRead(char** MVecDef(pool), MstrView filename) {
+MstrView MfileRead(MByteArray** mbyte, MstrView filename) {
 	if (IsEmptyView(filename)) {
 		errno = EINVAL;
 		return EMPTYVIEW;
@@ -54,39 +55,44 @@ MstrView MfileRead(char** MVecDef(pool), MstrView filename) {
 
 
     rewind(file);
-    char* buffer = MVecPoolAlloc(&MVecRef(*pool), sizeof(char) * (buffer_len_a0 + 1));
+
+    size_t start_offset = (*mbyte)->len;
+    *mbyte = MByteArrayReserve(*mbyte, start_offset + buffer_len_a0 + 1);
+    char* buffer = (*mbyte)->raw + start_offset;
     size_t bytes_read = fread(buffer, 1, buffer_len_a0, file);
-
+    
     if (bytes_read != buffer_len_a0 && ferror(file)) {
-	    fclose(file);
-	    return EMPTYVIEW;
+        fclose(file);
+        return EMPTYVIEW;
     }
-
+    
     buffer[bytes_read] = '\0';
+    (*mbyte)->len = start_offset + bytes_read;
     fclose(file);
     return MstrViewFrom(buffer, 0, bytes_read);
 }
 
 
-MstrView MFileCreate(MstrView path, MstrView contents) {
+#define MfileWriteCstr(path, cstring) MfileWrite(MstrViewFrom(cstring, 0, strlen(cstring)), path)
+MstrView MfileWrite(MstrView path, MstrView contents) {
     if (IsEmptyView(path) || !contents.raw) {
-    	errno = EINVAL;
+        errno = EINVAL;
         return EMPTYVIEW;
     }
 
     char* p __free(strfree) = quick_strndup(path.raw, path.length);
     FILE* file = fopen(p, "wb");
     if (!file) {
-    	return EMPTYVIEW;
-    }
-
-    size_t written = fwrite(contents.raw, 1, contents.length, file);
-    if (written != contents.length) {
-        fclose(file);
         return EMPTYVIEW;
     }
 
+    size_t written = fwrite(contents.raw, 1, contents.length, file);
     fclose(file);
+    
+    if (written != contents.length) {
+        return EMPTYVIEW;
+    }
+
     return contents;
 }
 

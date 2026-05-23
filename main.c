@@ -7,12 +7,13 @@
 #include "merrval.h"
 #include "mfile.h"
 #include "mprint.h"
+#include "marr.h"
 
 int main(void)
 {
-	__free(strfree) char* MVecAlloc(pool, 100);
+	MByteArray* MByteArena = MByteArrayMalloc(100);
 
-    MstrView file = MfileReadCstr(&MVecRef(pool), "./main.c");
+    MstrView file = MfileReadCstr(&MByteArena, "./main.c");
     if (IsEmptyView(file)) return MPrintFmt("File read failed: "$(strerror(errno)));
 
 	MstrView left = {0}, right = file;
@@ -21,5 +22,7 @@ int main(void)
 	};
 	
 	MPrintFmt("FILE: "MstrViewFmt(file));
+
+	free(MByteArena);
 	return 0;
 }
