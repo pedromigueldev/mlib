@@ -66,12 +66,12 @@
         vec->raw[index] = data;                                                         \
         return vec->raw[index];                                                         \
     }                                                                                   \
-    static inline type Name##Get(Name* vec, size_t index) {                             \
+    WARN_UNUSED_RESULT static inline type Name##Get(Name* vec, size_t index) {                             \
         return (index >= vec->len                                                       \
                 ? *Name##PANIC(index, vec->len)                                         \
                 : vec->raw[index]);                                                     \
     }                                                                                   \
-    static inline type* Name##Ref(Name* vec, size_t index) {                            \
+    WARN_UNUSED_RESULT static inline type* Name##Ref(Name* vec, size_t index) {                            \
         return (index >= vec->len                                                       \
                 ? Name##PANIC(index, vec->len)                                          \
                 : &vec->raw[index]);                                                    \
@@ -86,11 +86,11 @@
     static inline void Name##Free(Name* vec) {                                          \
         MVECFREE(vec);                                                                  \
     }																					\
-    static inline Name* Name##Reserve(Name* vec, size_t min_capacity) {					\
+    WARN_UNUSED_RESULT static inline Name* Name##Reserve(Name* vec, size_t min_capacity) {					\
         if (min_capacity > vec->cap) {													\
             size_t new_cap = vec->cap ? vec->cap * 2 : 1;								\
             while (new_cap < min_capacity)												\
-                new_cap *= 1.5;															\
+                new_cap *= 2;															\
             Name* new_vec = MVECREALLOC(vec, sizeof(Name) + (new_cap * sizeof(type)));	\
             if (!new_vec) {																\
                 fprintf(stderr, "Out of memory\n");										\
@@ -100,6 +100,28 @@
             return new_vec;																\
         }																				\
         return vec;																		\
+    }																					\
+    WARN_UNUSED_RESULT static inline Name* Name##Grow(Name* vec, size_t additional) {                     	\
+        size_t needed = vec->len + additional;                                         	\
+        if (needed > vec->cap) {                                                       	\
+            size_t new_cap = vec->cap ? vec->cap * 2 : 1;                              	\
+            while (new_cap < needed) new_cap *= 2;                                     	\
+            Name* new_vec = MVECREALLOC(vec,                                           	\
+                sizeof(Name) + (new_cap * sizeof(type)));                               \
+            if (!new_vec) {                                                             \
+                fprintf(stderr, "Out of memory\n");                                     \
+                exit(1);                                                                \
+            }                                                                           \
+            new_vec->cap = new_cap;                                                     \
+            vec = new_vec;                                                              \
+        }                                                                               \
+        vec->len = needed;                                                              \
+        return vec;                                                                     \
+    }                                                                                   \
+    WARN_UNUSED_RESULT static inline void* Name##Alloc(Name** vec, size_t count) {                         \
+        size_t start = (*vec)->len;                                                     \
+        *vec = Name##Grow(*vec, count);                                                	\
+        return &(*vec)->raw[start];                                                     \
     }
     
 #define MArrForeach(typeitem, ptr)                                                      \
@@ -110,4 +132,5 @@
             for (typeitem = ptr->raw[index]; __k; __k = !__k)
 
 MArrDefine(char, MByteArray);
+DEFINE_FREE(MByteArrayFree, MByteArray*, MByteArrayFree)
 #endif
