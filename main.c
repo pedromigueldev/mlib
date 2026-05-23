@@ -11,15 +11,15 @@
 int main(void)
 {
 	__free(strfree) char* MVecAlloc(pool, 100);
-    MRetEither(file, err, MfileReadCstr(&MVecRef(pool), "./main.c"));
-    if (err) {
-    	MPrintFmt("File read failed: "$(strerror(err)));
-    	return 1;
-    }
+
+    MstrView file = MfileReadCstr(&MVecRef(pool), "./main.c");
+    if (IsEmptyView(file)) return MPrintFmt("File read failed: "$(strerror(errno)));
+
 	MstrView left = {0}, right = file;
 	while(!IsEmptyView(left = MstrSplitView(right, '\n', &right))) {
 		MPrintFmt("LINE:"MstrViewFmt(left));
 	};
+	
 	MPrintFmt("FILE: "MstrViewFmt(file));
 	return 0;
 }

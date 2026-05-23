@@ -24,7 +24,7 @@ typedef struct {
 } MstrView;
 
 #define EMPTYVIEW ((MstrView) { .length = 0, .raw = NULL })
-#define IsEmptyView(x) ((x).length == 0 && (x).raw == NULL)
+#define IsEmptyView(x) ((x).raw == NULL)
 
 MstrView mstr_view_mstrview(MstrView string, size_t from) {
     return ((MstrView) {
@@ -40,21 +40,22 @@ MstrView mstr_view_string_len(char* string, size_t from, size_t length) {
     });
 }
 
-#define MstrViewFrom(string, ...) _Generic((string), \
-            MstrView: mstr_view_mstrview, \
-            char*: mstr_view_string_len\
-            ) (string, __VA_ARGS__)
+#define MstrViewFrom(string, ...) _Generic((string), MstrView: mstr_view_mstrview, char*: mstr_view_string_len ) (string, __VA_ARGS__)
             
 MstrView mstr_trim_left(MstrView view) {
     size_t count = 0;
-    while(view.raw != NULL && view.raw[count] == ' ') count++;
+    if (!IsEmptyView(view))
+        while(count < view.length && view.raw[count] == ' ')
+            count++;
+
     return MstrViewFrom(view, count);
 }
 
 MstrView mstr_trim_right(MstrView view) {
     size_t count = view.length;
-    while(view.raw != NULL && view.raw[count - 1] == ' ') 
-        count--;
+    if (!IsEmptyView(view) && count > 0)
+        while(view.raw[count - 1] == ' ') 
+            count--;
         
     return ((MstrView) {
         .length = count > view.length ? 0 : count,

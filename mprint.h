@@ -54,14 +54,16 @@ MstrView mstr_fmt_ln(char** MVecDef(pool), const char *first, ...) {
 	return print_b;
 }
 
-void mprint_fmt_ln(const char *first, ...) {
+int mprint_fmt_ln(const char *first, ...) {
     char* MVecAlloc(pool, 1000);
 	va_list args;
 	va_start(args, first);
 	MstrView print_b = mprint_fmt_ln_v(&MVecRef(pool), first, args);
-	printf("%.*s\n", (int)print_b.length, print_b.raw);
+	int res = printf("%.*s\n", (int)print_b.length, print_b.raw);
 	free(MVec(pool));
 	va_end(args);
+
+	return res;
 }
 
 #define MPrintFmt(...) mprint_fmt_ln(""__VA_ARGS__, NULL)

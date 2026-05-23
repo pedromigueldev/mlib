@@ -12,7 +12,7 @@
 #include <stdarg.h>
 
 #define __cleanup(func) __attribute__((__cleanup__(func)))
-static inline __attribute__((__must_check__)) void *__must_check_ptr(void *p) {
+static inline void *__must_check_ptr(void *p) {
     return p;
 }
 
