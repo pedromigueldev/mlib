@@ -2,14 +2,16 @@
 #define MLIB
 
 #include <stdlib.h>
+#include <stdint.h>
+#include <stdarg.h>
 #include <string.h>
+#include <unistd.h>
+
 #include <ctype.h>
 #include <stdio.h>
 #include <limits.h>
 #include <sys/stat.h>
-#include <unistd.h>
 #include <errno.h>
-#include <stdarg.h>
 
 #define __cleanup(func) __attribute__((__cleanup__(func)))
 static inline void *__must_check_ptr(void *p) {
