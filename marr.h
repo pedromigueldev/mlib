@@ -114,7 +114,8 @@
             }                                                                           \
             new_vec->cap = new_cap;                                                     \
             vec = new_vec;                                                              \
-        }                                          \
+        }                                                                               \
+        vec->len = needed;                                                              \
         return vec;                                                                     \
     }                                                                                   \
     WARN_UNUSED_RESULT static inline void* Name##Alloc(Name** vec, size_t count) {                         \

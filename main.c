@@ -11,7 +11,7 @@
 
 int main(void)
 {
-	MByteArray* MByteArena = MByteArrayMalloc(100);
+	MByteArray* MByteArena = MByteArrayMalloc(1);
 
     MstrView file = MfileReadCstr(&MByteArena, "./main.c");
     if (IsEmptyView(file)) return MPrintFmt("File read failed: "$(strerror(errno)));

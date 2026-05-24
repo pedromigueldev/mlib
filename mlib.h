@@ -31,14 +31,14 @@ static inline void *__must_check_ptr(void *p) {
     }    
 #define __free(name) __cleanup(__free_##name)
 
-DEFINE_FREE(strfree, char*, free);
+DEFINE_FREE(strfree, char*, free)
 
 #define CONCAT(a, b) a##b
 #define CONCAT_EXPAND(a, b) CONCAT(a, b)
 #define UNIQUE_NAME(base) CONCAT_EXPAND(base, __LINE__)
 #define UNUSED(x) (void)(x)
 #define MstrFmt(x) _3_$("%.*s", (x)->length, (x)->raw)
-#define MstrViewFmt(x) _3_$("%.*s", (x).length, (x).raw)
+#define MstrViewFmt(x) _3_$("%.*s", (int)(x).length, MViewRaw(x))
 
 bool starts_with(const char *str, const char *prefix) {
 	size_t len_prefix = strlen(prefix);

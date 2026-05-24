@@ -14,7 +14,7 @@
 #include "merrval.h"
 #include "marr.h"
 
-#define MfileMkdirCstr(x, cstring) MfileMkdir(MstrViewFrom(cstring, 0, strlen(cstring)), x)
+#define MfileMkdirCstr(x, pool, cstring) MfileMkdir(MstrViewFrom(pool, cstring, strlen(cstring)), x)
 MstrView MfileMkdir(MstrView path, __mode_t permission) {
     UNUSED(permission); // on windows needs to be ignored cuz MKDIR expands and mode is not used
 	
@@ -23,19 +23,19 @@ MstrView MfileMkdir(MstrView path, __mode_t permission) {
     	return EMPTYVIEW;
     }
 
-	char* p __free(strfree) = quick_strndup(path.raw, path.length);
+	char* p __free(strfree) = quick_strndup(MViewRaw(path), path.length);
     if (MKDIR(p, permission) == -1) return EMPTYVIEW;
     
     return path;
 }
 
-#define MfileReadCstr(pool, cstring) MfileRead(pool, MstrViewFrom(cstring, 0, strlen(cstring)))
+#define MfileReadCstr(pool, cstring) MfileRead(pool, MstrViewFromCstr(pool, cstring, strlen(cstring)))
 MstrView MfileRead(MByteArray** mbyte, MstrView filename) {
 	if (IsEmptyView(filename)) {
 		errno = EINVAL;
 		return EMPTYVIEW;
 	}
-	char* p __free(strfree) = quick_strndup(filename.raw, filename.length);
+	char* p __free(strfree) = quick_strndup(MViewRaw(filename), filename.length);
     FILE* file = fopen(p, "rb");
     if (!file) {
     	return EMPTYVIEW;
@@ -56,37 +56,33 @@ MstrView MfileRead(MByteArray** mbyte, MstrView filename) {
 
     rewind(file);
 
-    size_t start_offset = (*mbyte)->len;
-    *mbyte = MByteArrayReserve(*mbyte, start_offset + buffer_len_a0 + 1);
-    char* buffer = (*mbyte)->raw + start_offset;
+    size_t start = (*mbyte)->len;
+    char* buffer = MByteArrayAlloc(mbyte, buffer_len_a0 + 1);
     size_t bytes_read = fread(buffer, 1, buffer_len_a0, file);
-    
-    if (bytes_read != buffer_len_a0 && ferror(file)) {
-        fclose(file);
-        return EMPTYVIEW;
-    }
-    
     buffer[bytes_read] = '\0';
-    (*mbyte)->len = start_offset + bytes_read;
-    fclose(file);
-    return MstrViewFrom(buffer, 0, bytes_read);
+
+    return (MstrView){
+        .start = start,
+        .length = bytes_read,
+        .raw = mbyte
+    };
 }
 
 
 #define MfileWriteCstr(path, cstring) MfileWrite(MstrViewFrom(cstring, 0, strlen(cstring)), path)
 MstrView MfileWrite(MstrView path, MstrView contents) {
-    if (IsEmptyView(path) || !contents.raw) {
+    if (IsEmptyView(path) || IsEmptyView(contents)) {
         errno = EINVAL;
         return EMPTYVIEW;
     }
 
-    char* p __free(strfree) = quick_strndup(path.raw, path.length);
+    char* p __free(strfree) = quick_strndup(MViewRaw(path), path.length);
     FILE* file = fopen(p, "wb");
     if (!file) {
         return EMPTYVIEW;
     }
 
-    size_t written = fwrite(contents.raw, 1, contents.length, file);
+    size_t written = fwrite(MViewRaw(contents), 1, contents.length, file);
     fclose(file);
     
     if (written != contents.length) {
