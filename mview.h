@@ -120,5 +120,5 @@ ViewName##FindSpanIndex(ViewName view, const Type* needle, size_t needle_len,   
 }
 
 MViewDefine(char, MByteArray, MstrView)
-#define MstrViewFmt(x) _3_$("%.*s", (int)(x).length, MstrViewRaw(x))
+#define MstrViewFmt(x) ((x).raw == NULL || (x).length == 0 ? "" : _3_$("%.*s", (int)(x).length, MstrViewRaw(x)))
 #endif
