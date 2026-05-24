@@ -18,8 +18,8 @@ MstrView mprint_fmt_ln_v(MByteArray** pool, const char *first, va_list args) {
         
 			int needed = snprintf(NULL, 0, fmt, len, str);
 			if (needed > 0) {
-				start_len += needed;
 				size_t length = (size_t)needed;
+				start_len += length;
 				char* handle = MByteArrayAlloc(pool, length + 1);
 				snprintf(handle, length + 1, fmt,  len, str);
 				(*pool)->len--;
@@ -30,8 +30,8 @@ MstrView mprint_fmt_ln_v(MByteArray** pool, const char *first, va_list args) {
         
             int needed = snprintf(NULL, 0, fmt, variable);
             if (needed > 0) {
-				start_len += needed;
-   				size_t length = (size_t)needed;
+				size_t length = (size_t)needed;
+				start_len += length;
 	            char* handle = MByteArrayAlloc(pool, length + 1);
 	            snprintf(handle, length + 1, fmt, variable);
 				(*pool)->len--;
@@ -39,8 +39,8 @@ MstrView mprint_fmt_ln_v(MByteArray** pool, const char *first, va_list args) {
         } else {
 		    int needed = snprintf(NULL, 0, "%s", fmt);
 		    if (needed > 0) {
-				start_len += needed;
-		    	size_t length = (size_t)needed;
+				size_t length = (size_t)needed;
+				start_len += length;
     		    char* handle = MByteArrayAlloc(pool, length);
     			memcpy(handle, fmt, length);
 		    }
