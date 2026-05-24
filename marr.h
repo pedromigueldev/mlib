@@ -33,7 +33,7 @@
         memset(temp, 0, struct_size);                                                   \
         if (!temp) {                                                                    \
             fprintf(stderr, "Error creating "#Name"\n");                                \
-            exit(69);                                                                   \
+            exit(24);                                                                   \
             return NULL;                                                                \
         }                                                                               \
         temp->cap = size;                                                               \
@@ -53,7 +53,7 @@
                 sizeof(Name) + (new_cap * sizeof(type)));                               \
             if (!new_vec) {                                                             \
                 fprintf(stderr, "Out of memory\n");                                     \
-                exit(1);                                                                \
+                exit(420);                                                              \
             }                                                                           \
             new_vec->cap = new_cap;                                                     \
             vec = new_vec;                                                              \

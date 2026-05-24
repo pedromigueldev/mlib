@@ -10,7 +10,7 @@
 #endif
 
 #include "mlib.h"
-#include "mstr.h"
+#include "mview.h"
 #include "merrval.h"
 #include "marr.h"
 
@@ -18,39 +18,39 @@
 MstrView MfileMkdir(MstrView path, __mode_t permission) {
     UNUSED(permission); // on windows needs to be ignored cuz MKDIR expands and mode is not used
 	
-    if (IsEmptyView(path)) {
+    if (MstrViewIsEmpty(path)) {
         errno = EINVAL; 
-    	return EMPTYVIEW;
+    	return MstrViewEmpty();
     }
 
-	char* p __free(strfree) = quick_strndup(MViewRaw(path), path.length);
-    if (MKDIR(p, permission) == -1) return EMPTYVIEW;
+	char* p __free(strfree) = quick_strndup(MstrViewRaw(path), path.length);
+    if (MKDIR(p, permission) == -1) return MstrViewEmpty();
     
     return path;
 }
 
-#define MfileReadCstr(pool, cstring) MfileRead(pool, MstrViewFromCstr(pool, cstring, strlen(cstring)))
+#define MfileReadCstr(pool, cstring) MfileRead(pool, MstrViewFromBuffer(pool, cstring, strlen(cstring)))
 MstrView MfileRead(MByteArray** mbyte, MstrView filename) {
-	if (IsEmptyView(filename)) {
+	if (MstrViewIsEmpty(filename)) {
 		errno = EINVAL;
-		return EMPTYVIEW;
+		return MstrViewEmpty();
 	}
-	char* p __free(strfree) = quick_strndup(MViewRaw(filename), filename.length);
+	char* p __free(strfree) = quick_strndup(MstrViewRaw(filename), filename.length);
     FILE* file = fopen(p, "rb");
     if (!file) {
-    	return EMPTYVIEW;
+    	return MstrViewEmpty();
     }
 
     if (fseek(file, 0, SEEK_END) != 0) {
         fclose(file);
-        return EMPTYVIEW;
+        return MstrViewEmpty();
     }
 
     long buffer_len = ftell(file);
     size_t buffer_len_a0 = (size_t)buffer_len;
     if (buffer_len < 0) {
         fclose(file);
-        return EMPTYVIEW;
+        return MstrViewEmpty();
     }
 
 
@@ -71,22 +71,22 @@ MstrView MfileRead(MByteArray** mbyte, MstrView filename) {
 
 #define MfileWriteCstr(path, cstring) MfileWrite(MstrViewFrom(cstring, 0, strlen(cstring)), path)
 MstrView MfileWrite(MstrView path, MstrView contents) {
-    if (IsEmptyView(path) || IsEmptyView(contents)) {
+    if (MstrViewIsEmpty(path) || MstrViewIsEmpty(contents)) {
         errno = EINVAL;
-        return EMPTYVIEW;
+        return MstrViewEmpty();
     }
 
-    char* p __free(strfree) = quick_strndup(MViewRaw(path), path.length);
+    char* p __free(strfree) = quick_strndup(MstrViewRaw(path), path.length);
     FILE* file = fopen(p, "wb");
     if (!file) {
-        return EMPTYVIEW;
+        return MstrViewEmpty();
     }
 
-    size_t written = fwrite(MViewRaw(contents), 1, contents.length, file);
+    size_t written = fwrite(MstrViewRaw(contents), 1, contents.length, file);
     fclose(file);
     
     if (written != contents.length) {
-        return EMPTYVIEW;
+        return MstrViewEmpty();
     }
 
     return contents;

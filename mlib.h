@@ -37,8 +37,6 @@ DEFINE_FREE(strfree, char*, free)
 #define CONCAT_EXPAND(a, b) CONCAT(a, b)
 #define UNIQUE_NAME(base) CONCAT_EXPAND(base, __LINE__)
 #define UNUSED(x) (void)(x)
-#define MstrFmt(x) _3_$("%.*s", (x)->length, (x)->raw)
-#define MstrViewFmt(x) _3_$("%.*s", (int)(x).length, MViewRaw(x))
 
 bool starts_with(const char *str, const char *prefix) {
 	size_t len_prefix = strlen(prefix);
@@ -66,4 +64,21 @@ bool starts_with(const char *str, const char *prefix) {
 #define _2_$(fmt,var) ,(fmt),(var),""
 #define _3_$(fmt,len,var) ,(fmt),(len),(var),""
 #define $(x) _2_$(_ARG_G(x), _Generic(x, bool: ((x) ? "true" : "false"), default: x))
+
+char *quick_strndup(const char *s, size_t n)
+{
+    size_t len = 0;
+    while (len < n && s[len] != '\0')
+        len++;
+
+    char *copy = (char *)malloc(len + 1);
+    if (!copy)
+        return NULL;
+
+    memcpy(copy, s, len);
+    copy[len] = '\0';
+
+    return copy;
+}
+
 #endif

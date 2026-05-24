@@ -3,21 +3,22 @@
 #include <stdint.h>
 #include <assert.h>
 #include "mlib.h"
-#include "mstr.h"
+#include "mview.h"
 #include "merrval.h"
 #include "mfile.h"
 #include "mprint.h"
 #include "marr.h"
 
+int char_eq(char a, char b) { return a == b; }
 int main(void)
 {
 	MByteArray* MByteArena = MByteArrayMalloc(1);
 
     MstrView file = MfileReadCstr(&MByteArena, "./main.c");
-    if (IsEmptyView(file)) return MPrintFmt("File read failed: "$(strerror(errno)));
+    if (MstrViewIsEmpty(file)) return MPrintFmt("File read failed: "$(strerror(errno)));
 
 	MstrView left = {0}, right = file;
-	while(!IsEmptyView(left = MstrSplitView(right, '\n', &right))) {
+	while(!MstrViewIsEmpty(left = MstrViewSplit(right, '\n', char_eq, &right))) {
 		MPrintFmt("LINE:"MstrViewFmt(left));
 	};
 	

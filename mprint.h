@@ -1,6 +1,6 @@
 #ifndef MPRINT_H
 #define MPRINT_H
-#include "mstr.h"
+#include "mview.h"
 #include "marr.h"
 
 MstrView mprint_fmt_ln_v(MByteArray** pool, const char *first, va_list args) {
@@ -66,7 +66,7 @@ int mprint_fmt_ln(const char *first, ...) {
 	va_list args;
 	va_start(args, first);
 	MstrView print_b = mprint_fmt_ln_v(&pool, first, args);
-	int res = printf("%.*s\n", (int)print_b.length, MViewRaw(print_b));
+	int res = printf("%.*s\n", (int)print_b.length, MstrViewRaw(print_b));
 	free(pool);
 	va_end(args);
 
