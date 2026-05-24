@@ -1,4 +1,3 @@
-
 #ifndef MVIEW_H
 #define MVIEW_H
 #include "marr.h"
@@ -72,6 +71,52 @@ ViewName##Split(ViewName view, Type delim, int (*eq)(Type, Type), ViewName* outR
         .start = view.start,                                                         \
         .length = count                                                              \
     };                                                                               \
+}                                                                                    \
+WARN_UNUSED_RESULT static inline ViewName                                            \
+ViewName##FindSpan(ViewName view, const Type* needle, size_t needle_len,             \
+                   int (*eq)(Type, Type)) {                                          \
+    if (view.length == 0 || view.raw == NULL || needle_len == 0 ||                   \
+        needle_len > view.length) {                                                  \
+        return ViewName##Empty();                                                    \
+    }                                                                                \
+    for (size_t i = 0; i <= view.length - needle_len; i++) {                        \
+        int found = 1;                                                               \
+        for (size_t j = 0; j < needle_len; j++) {                                   \
+            if (!eq((*view.raw)->raw[view.start + i + j], needle[j])) {              \
+                found = 0;                                                           \
+                break;                                                               \
+            }                                                                        \
+        }                                                                            \
+        if (found) {                                                                 \
+            return (ViewName){                                                       \
+                .raw = view.raw,                                                     \
+                .start = view.start + i,                                             \
+                .length = needle_len                                                 \
+            };                                                                       \
+        }                                                                            \
+    }                                                                                \
+    return ViewName##Empty();                                                        \
+}                                                                                    \
+WARN_UNUSED_RESULT static inline size_t                                              \
+ViewName##FindSpanIndex(ViewName view, const Type* needle, size_t needle_len,        \
+                        int (*eq)(Type, Type)) {                                     \
+    if (view.length == 0 || view.raw == NULL || needle_len == 0 ||                   \
+        needle_len > view.length) {                                                  \
+        return (size_t)-1;                                                           \
+    }                                                                                \
+    for (size_t i = 0; i <= view.length - needle_len; i++) {                        \
+        int found = 1;                                                               \
+        for (size_t j = 0; j < needle_len; j++) {                                   \
+            if (!eq((*view.raw)->raw[view.start + i + j], needle[j])) {              \
+                found = 0;                                                           \
+                break;                                                               \
+            }                                                                        \
+        }                                                                            \
+        if (found) {                                                                 \
+            return view.start + i;                                                   \
+        }                                                                            \
+    }                                                                                \
+    return (size_t)-1;                                                               \
 }
 
 MViewDefine(char, MByteArray, MstrView)
