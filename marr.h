@@ -114,8 +114,7 @@
             }                                                                           \
             new_vec->cap = new_cap;                                                     \
             vec = new_vec;                                                              \
-        }                                                                               \
-        vec->len = needed;                                                              \
+        }                                          \
         return vec;                                                                     \
     }                                                                                   \
     WARN_UNUSED_RESULT static inline void* Name##Alloc(Name** vec, size_t count) {                         \
@@ -131,6 +130,6 @@
              __k = !__k, index++)                                                       \
             for (typeitem = ptr->raw[index]; __k; __k = !__k)
 
-MArrDefine(char, MByteArray);
+MArrDefine(char, MByteArray)
 DEFINE_FREE(MByteArrayFree, MByteArray*, MByteArrayFree)
 #endif
