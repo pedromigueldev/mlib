@@ -10,33 +10,50 @@
 #include "mxml.h"
 
 typedef struct {
-    char* tag; 
-    char* class; 
-	char* name; 
-    char* id; 
-    char* lib;
-    size_t version;
+    char* class;
+    char* id;
+	char* href;
+ 	char* aria;
+ 	char* lang;
+ 	char* dir;
+ 	char* style;
+ 	char* src;
+ 	char* onclick;
+ 	
 	bool isVoid, tagInterface;
-} TagInterface;
+} HTMLInterface;
+
+#define xvoid .isVoid=true
+
+#define html(text, ...) mx(html, .lang=text, ##__VA_ARGS__)
+#define head(...) mx(head, __VA_ARGS__)
+#define body(...) mx(body,__VA_ARGS__)
+#define div(...) mx(div, __VA_ARGS__)
+#define p(text, ...) mx(p, __VA_ARGS__) mx$(text)
+#define section(text, ...) mx(section, __VA_ARGS__) mx$(text)
+#define mainSection(text, ...) mx(mainSection, __VA_ARGS__) mx$(text)
+
+#define h1(text, ...) mx(h1, .isVoid=true, ##__VA_ARGS__) mx$(text)
+#define h2(text, ...) mx(h2, .isVoid=true, ##__VA_ARGS__) mx$(text)
+#define h3(text, ...) mx(h3, .isVoid=true, ##__VA_ARGS__) mx$(text)
+#define h4(text, ...) mx(h4, .isVoid=true, ##__VA_ARGS__) mx$(text)
+#define h5(text, ...) mx(h5, .isVoid=true, ##__VA_ARGS__) mx$(text)
+#define button(text, ...) mx(button, .isVoid=true, ##__VA_ARGS__) mx$(text)
 
 int main()
 {
-	MByteArray* pool = MByteArrayMalloc(0);
+    MByteArray* pool = MByteArrayMalloc(0);
     XMLFILE* xmlfile = XMLFILEMalloc(0);
-	
-    MXMLBegin(&pool, &xmlfile, TagInterface) {
-        mx(interface, .isVoid=true) {
-			mx(object, .class="GtkApplicationWindow", .id="main_window") {
-				mx(property, .name="title") mx$("Counter "$(__LINE__));
-				mx(property, .name="default-width") mx$("Counter "$(__LINE__));
-				mx(property, .name="default-height") mx$("Counter "$(__LINE__));
-			};
 
-			mx(object, .class="GtkApplicationWindow", .id="main_window") {
-				mx(property, .name="title") mx$("Counter");
-				mx(property, .name="default-width") mx$("Counter");
-				mx(property, .name="default-height") mx$("Counter "$(__LINE__));
-			};
+    MXMLBegin(&pool, &xmlfile, HTMLInterface)
+    {
+        html("pt-BR") {
+            head(xvoid);
+            body(xvoid){
+	            h1("Button Example");
+	            button("Click Me", .id="btnSend", .class="primary-btn", .onclick="alert('Button clicked!')");
+	            button( "Console Log", .onclick="console.log('Hello from button')");
+            }
         }
     }
 	
@@ -44,6 +61,5 @@ int main()
 	printf("freeing: %zu bytes | used %zu \n", xmlfile->cap, xmlfile->len);
     MByteArrayFree(pool);
 	XMLFILEFree(xmlfile);
-
     return 0;
 }
