@@ -1,29 +1,53 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+#include <stddef.h>
 
-#include <stdbool.h>
-#include <stdint.h>
-#include <assert.h>
-#include "mlib.h"
-#include "mview.h"
-#include "merrval.h"
-#include "mfile.h"
-#include "mprint.h"
 #include "marr.h"
+#include "mview.h"
+#include "helpers.h"
+#include "mxml.h"
 
-int char_eq(char a, char b) { return a == b; }
-int main(void)
+typedef struct {
+    char* tag; 
+    char* class; 
+    char* id; 
+    char* lib;
+    size_t version;
+	bool isVoid, tagInterface;
+} TagInterface;
+
+int main()
 {
-	MByteArray* MByteArena = MByteArrayMalloc(1);
-
-    MstrView file = MfileReadCstr(&MByteArena, "./main.c");
-    if (MstrViewIsEmpty(file)) return MPrintFmt("File read failed: "$(strerror(errno)));
-
-	MstrView left = {0}, right = file;
-	while(!MstrViewIsEmpty(left = MstrViewSplit(right, '\n', char_eq, &right))) {
-		MPrintFmt("LINE:"MstrViewFmt(left));
-	};
+	MByteArray* pool = MByteArrayMalloc(0);
+    XMLFILE* xmlfile = XMLFILEMalloc(0);
+        
+    XMLBEGIN(&pool, &xmlfile, TagInterface) {
+        XML(interface, .isVoid=true) {
+			for (size_t i = 0; i < 10; i++)
+			{
+				for (size_t i = 0; i < 10; i++)
+				{
+					XML(requires, .lib="gtk", .version=4.0) {
+						XML(object, .class="GtkApplicationWindow", .id="main_window");
+					}
+				}
+				
+				XML(requires, .lib="gtk", .version=4.0) {
+					XML(object, .class="GtkApplicationWindow", .id="main_window");
+				}
+			}
+			
+        }
+    }
 	
-	MPrintFmt("FILE: "MstrViewFmt(file));
+    printf("Hello World \n%.*s\n", (int)xmlfile->len, xmlfile->raw);
+	printf("Hello World \n%.*s\n", (int)pool->len, pool->raw);
+	printf("freeing: %zu bytes | used %zu \n", pool->cap, pool->len);
+	printf("freeing: %zu bytes | used %zu \n", xmlfile->cap, xmlfile->len);
+    MByteArrayFree(pool);
+	XMLFILEFree(xmlfile);
 
-	free(MByteArena);
-	return 0;
+    return 0;
 }

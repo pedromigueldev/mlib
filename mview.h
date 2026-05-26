@@ -23,7 +23,7 @@ ViewName##FromBuffer(ArrayName** arr, const Type* src, size_t count) {          
         *arr = ArrayName##Push(*arr, src[i]);                                        \
     }                                                                                \
     return (ViewName){ .start = start, .length = count, .raw = arr };                \
-}                                                                                    \
+}                                                                           \
 WARN_UNUSED_RESULT static inline ViewName                                            \
 ViewName##TrimLeft(ViewName view, Type value, int (*eq)(Type, Type)) {               \
     while (view.length > 0 && eq((*view.raw)->raw[view.start], value)) {             \
@@ -119,6 +119,15 @@ ViewName##FindSpanIndex(ViewName view, const Type* needle, size_t needle_len,   
     return (size_t)-1;                                                               \
 }
 
+#define MViewPushBackArray(ArrName, arr, ViewName, view)                              \
+    do {                                                         \
+        ViewName view_ = (view);                                 \
+        for (size_t i_ = 0; i_ < view_.length; ++i_) {           \
+            *(arr) = ArrName##Push(*(arr),                      \
+                (*(view_).raw)->raw[(view_).start + i_]);        \
+        }                                                        \
+    } while(0)
+    
 MViewDefine(char, MByteArray, MstrView)
 #define LEAVE(x) x
 #define MstrViewFmt(x) _3_$("%.*s", (int)(x).length, (x).raw == NULL || (x).length == 0 ? "" : MstrViewRaw(x))
