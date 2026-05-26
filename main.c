@@ -12,6 +12,7 @@
 typedef struct {
     char* tag; 
     char* class; 
+	char* name; 
     char* id; 
     char* lib;
     size_t version;
@@ -22,29 +23,24 @@ int main()
 {
 	MByteArray* pool = MByteArrayMalloc(0);
     XMLFILE* xmlfile = XMLFILEMalloc(0);
-        
-    XMLBEGIN(&pool, &xmlfile, TagInterface) {
-        XML(interface, .isVoid=true) {
-			for (size_t i = 0; i < 10; i++)
-			{
-				for (size_t i = 0; i < 10; i++)
-				{
-					XML(requires, .lib="gtk", .version=4.0) {
-						XML(object, .class="GtkApplicationWindow", .id="main_window");
-					}
-				}
-				
-				XML(requires, .lib="gtk", .version=4.0) {
-					XML(object, .class="GtkApplicationWindow", .id="main_window");
-				}
-			}
-			
+	
+    MXMLBegin(&pool, &xmlfile, TagInterface) {
+        mx(interface, .isVoid=true) {
+			mx(object, .class="GtkApplicationWindow", .id="main_window") {
+				mx(property, .name="title") mx$("Counter "$(__LINE__));
+				mx(property, .name="default-width") mx$("Counter "$(__LINE__));
+				mx(property, .name="default-height") mx$("Counter "$(__LINE__));
+			};
+
+			mx(object, .class="GtkApplicationWindow", .id="main_window") {
+				mx(property, .name="title") mx$("Counter");
+				mx(property, .name="default-width") mx$("Counter");
+				mx(property, .name="default-height") mx$("Counter "$(__LINE__));
+			};
         }
     }
 	
     printf("Hello World \n%.*s\n", (int)xmlfile->len, xmlfile->raw);
-	printf("Hello World \n%.*s\n", (int)pool->len, pool->raw);
-	printf("freeing: %zu bytes | used %zu \n", pool->cap, pool->len);
 	printf("freeing: %zu bytes | used %zu \n", xmlfile->cap, xmlfile->len);
     MByteArrayFree(pool);
 	XMLFILEFree(xmlfile);

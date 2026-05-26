@@ -4,6 +4,7 @@ DEBUG_FLAGS     = -g3 \
                   -fsanitize=address \
                   -fsanitize=undefined \
                   -fsanitize=leak\
+                  -Wpedantic\
                   -std=c11
                   
 LDFLAGS         = -pie
