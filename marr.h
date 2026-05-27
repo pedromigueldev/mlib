@@ -61,6 +61,10 @@
         vec->raw[vec->len++] = (data);                                                  \
         return vec;                                                                     \
     }                                                                                   \
+    WARN_UNUSED_RESULT static inline Name* Name##PushMany(Name* vec, type* data, size_t len) {\
+        for(int i = 0; i < (int) len; i++) vec = Name##Push(vec, data[i]);				\
+        return vec;                                                                     \
+    }\
     static inline type Name##Set(Name* vec, size_t index, type data) {                  \
         if (index >= vec->len) Name##PANIC(index, vec->len);                            \
         vec->raw[index] = data;                                                         \

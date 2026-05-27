@@ -12,15 +12,38 @@
 typedef struct {
     char* class;
     char* id;
-	char* href;
- 	char* aria;
- 	char* lang;
- 	char* dir;
- 	char* style;
- 	char* src;
- 	char* onclick;
- 	
-	bool isVoid, tagInterface;
+    char* href;
+    char* aria;
+    char* lang;
+    char* dir;
+    char* style;
+    char* src;
+    char* onclick;
+    char* type;
+    char* name;
+    char* value;
+    char* placeholder;
+    char* alt;
+    char* title;
+    char* target;
+    char* rel;
+    char* charset;
+    char* content;
+    char* action;
+    char* method;
+    char* for_attr;
+    char* disabled;
+    char* checked;
+    char* selected;
+    char* rows;
+    char* cols;
+    char* width;
+    char* height;
+    char* tabindex;
+    char* role;
+    
+    bool isVoid;
+    bool tagInterface;
 } HTMLInterface;
 
 #define xvoid .isVoid=true

@@ -3,6 +3,7 @@
 
 #include "marr.h"
 #include "mprint.h"
+#include "helpers.h"
 
 MArrDefine(MstrView, XMLTAGS)
 MArrDefine(char, XMLFILE)
@@ -24,6 +25,8 @@ MXMLContext MXMLContextInit(MByteArray** b, XMLFILE** c) {
 }
 
 int chareq (char a, char b) { return a == b; }
+#define MstrViewTrimSpaceLeft(x) MstrViewTrim(x, ' ', chareq)
+#define MstrViewTrimLeftDot(x) MstrViewTrimLeft(x, '.', chareq)
 
 int MwriteXMLOpenTag(MXMLContext* xmlcontext, const char* objectName, size_t name_len, const char* param, size_t param_len, int* level, ...) {
     // indent and open tag <
@@ -42,7 +45,7 @@ int MwriteXMLOpenTag(MXMLContext* xmlcontext, const char* objectName, size_t nam
     while(!MstrViewIsEmpty(left = MstrViewSplit(params, ',', chareq, &params))) {
 		if (!MstrViewIsEmpty(MstrViewFindSpan(left, "isVoid", isVoidConst, chareq))) continue;
 		*(xmlcontext->xmlfile) = XMLFILEPush(*(xmlcontext->xmlfile), ' ');
-        MViewPushBackArray(XMLFILE, xmlcontext->xmlfile, MstrView, MstrViewTrimLeft(MstrViewTrim(left, ' ', chareq), '.', chareq));
+        MViewPushBackArray(XMLFILE, xmlcontext->xmlfile, MstrView, pipe(left, MstrViewTrimSpaceLeft, MstrViewTrimLeftDot));
     }
 
 	//close the tag <tag param=1>
